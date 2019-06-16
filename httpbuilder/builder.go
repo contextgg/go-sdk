@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -108,22 +109,27 @@ func (b *httpBuilder) SetBody(body interface{}) HTTPBuilder {
 func (b *httpBuilder) Do() (int, error) {
 	var headers = make(map[string]string)
 
-	var input []byte
-
-	switch body := b.body.(type) {
-	case *string:
-		input = []byte(*body)
-		headers["Content-Type"] = "text/plain"
-	case string:
-		input = []byte(body)
-		headers["Content-Type"] = "text/plain"
-	default:
-		input, _ = json.Marshal(body)
-		headers["Content-Type"] = "application/json"
+	var body io.Reader
+	if b.body != nil {
+		switch raw := b.body.(type) {
+		case *string:
+			body = strings.NewReader(*raw)
+			headers["Content-Type"] = "text/plain"
+			headers["Accept"] = "text/plain"
+		case string:
+			body = strings.NewReader(raw)
+			headers["Content-Type"] = "text/plain"
+			headers["Accept"] = "text/plain"
+		default:
+			input, _ := json.Marshal(raw)
+			body = bytes.NewReader(input)
+			headers["Content-Type"] = "application/json"
+			headers["Accept"] = "application/json"
+		}
 	}
 
 	b.logger("Method %s, URL %s", b.method, b.url)
-	req, err := http.NewRequest(b.method, b.url, bytes.NewReader(input))
+	req, err := http.NewRequest(b.method, b.url, body)
 	if err != nil {
 		return 0, err
 	}
@@ -141,9 +147,6 @@ func (b *httpBuilder) Do() (int, error) {
 		auth := fmt.Sprintf("%s %s", b.authType, b.authToken)
 		req.Header.Set("Authorization", strings.Trim(auth, " "))
 	}
-
-	flog, _ := json.Marshal(req)
-	b.logger(string(flog))
 
 	res, err := b.client.Do(req)
 	if err != nil {

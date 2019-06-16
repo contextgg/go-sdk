@@ -15,7 +15,7 @@ type DiscordUser struct {
 }
 
 func TestGetDiscordUser(t *testing.T) {
-	const url = "https://discordapp.com/api/users/234466834202492928"
+	const url = `https://discordapp.com/api/users/@me`
 	var botToken = os.Getenv("DISCORD_BOT_TOKEN")
 
 	var result DiscordUser
@@ -35,11 +35,11 @@ func TestGetDiscordUser(t *testing.T) {
 	}
 
 	// we should get a result!
-	if result.ID != "234466834202492928" {
+	if result.ID != "492157091893477377" {
 		t.Errorf("Wrong user id: %s", result.ID)
 	}
 
-	if result.Username != "Doofus Viper" {
+	if result.Username != "ctx" {
 		t.Errorf("Wrong username: %s", result.Username)
 	}
 }
