@@ -142,6 +142,9 @@ func (b *httpBuilder) Do() (int, error) {
 		req.Header.Set("Authorization", strings.Trim(auth, " "))
 	}
 
+	flog, _ := json.Marshal(req)
+	b.logger(string(flog))
+
 	res, err := b.client.Do(req)
 	if err != nil {
 		return 0, err
