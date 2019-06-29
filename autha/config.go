@@ -1,6 +1,8 @@
 package autha
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 )
@@ -62,6 +64,7 @@ func (c *Config) Begin(w http.ResponseWriter, r *http.Request) {
 	session, err := c.sessionStore.Load(c.connection, r)
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
+		log.Print(fmt.Errorf("Error Session Load: %s", err.Error()))
 		return
 	}
 
@@ -70,6 +73,7 @@ func (c *Config) Begin(w http.ResponseWriter, r *http.Request) {
 	// save the session
 	if err := c.sessionStore.Save(session, w, r); err != nil {
 		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
+		log.Print(fmt.Errorf("Error Session Save: %s", err.Error()))
 		return
 	}
 
@@ -81,18 +85,21 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	session, err := c.sessionStore.Load(c.connection, r)
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
+		log.Print(fmt.Errorf("Error Session Load: %s", err.Error()))
 		return
 	}
 
 	token, err := c.authProvider.Authorize(session, r.URL.Query())
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("id"), http.StatusFound)
+		log.Print(fmt.Errorf("Error Authorize: %s", err.Error()))
 		return
 	}
 
 	id, err := c.authProvider.LoadIdentity(token, session)
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("id"), http.StatusFound)
+		log.Print(fmt.Errorf("Error Load Identity: %s", err.Error()))
 		return
 	}
 
@@ -102,17 +109,20 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	user, err := c.userProvider.Login(c.connection, id, token)
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("user"), http.StatusFound)
+		log.Print(fmt.Errorf("Error Login: %s", err.Error()))
 		return
 	}
 
 	if err := c.userStore.Save(user, w, r); err != nil {
 		http.Redirect(w, r, c.fullErrorURL("user"), http.StatusFound)
+		log.Print(fmt.Errorf("Error User Save: %s", err.Error()))
 		return
 	}
 
 	// // save the session
 	if err := c.sessionStore.Save(session, w, r); err != nil {
 		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
+		log.Print(fmt.Errorf("Error Session Save: %s", err.Error()))
 		return
 	}
 
