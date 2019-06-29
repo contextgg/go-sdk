@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -144,6 +145,10 @@ func (b *httpBuilder) Do() (int, error) {
 		case string:
 			body = strings.NewReader(raw)
 			headers["Content-Type"] = "text/plain"
+			headers["Accept"] = "text/plain"
+		case url.Values:
+			body = strings.NewReader(raw.Encode())
+			headers["Content-Type"] = "application/x-www-form-urlencoded"
 			headers["Accept"] = "text/plain"
 		default:
 			input, _ := json.Marshal(raw)

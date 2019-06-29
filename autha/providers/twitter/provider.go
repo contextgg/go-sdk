@@ -101,7 +101,6 @@ func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*auth
 		AddQuery("skip_status", "true").
 		AddQuery("include_email", "true").
 		SetOut(&user).
-		SetLogger(log.Printf).
 		Do()
 	if err != nil {
 		return nil, err
@@ -122,7 +121,7 @@ func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*auth
 func NewProvider(clientID, clientSecret, callbackURL string) autha.AuthProvider {
 	return &provider{
 		callbackURL: callbackURL,
-		consumer:    newConsumer(clientID, clientSecret, true),
+		consumer:    newConsumer(clientID, clientSecret, false),
 	}
 }
 

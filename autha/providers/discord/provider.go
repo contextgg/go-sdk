@@ -116,7 +116,6 @@ func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*auth
 		SetURL(userEndpoint).
 		SetAuthToken(authType, accessToken).
 		SetOut(&user).
-		// SetLogger(log.Printf).
 		Do()
 	if err != nil {
 		return nil, err
