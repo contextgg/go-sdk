@@ -13,11 +13,11 @@ type sessionStore struct {
 	cookieStore *sessions.CookieStore
 }
 
-func (s *sessionStore) Load(autha.AuthProvider, *http.Request) (autha.Session, error) {
+func (s *sessionStore) Load(string, *http.Request) (autha.Session, error) {
 	return nil, nil
 }
 
-func (s *sessionStore) Save(autha.Session, http.ResponseWriter, *http.Request) error {
+func (s *sessionStore) Save(string, http.ResponseWriter, *http.Request) error {
 	return nil
 }
 

@@ -28,6 +28,9 @@ type HTTPBuilder interface {
 	// SetBody is the input of the command
 	SetBody(interface{}) HTTPBuilder
 
+	// AddHeader to the request
+	AddHeader(string, string) HTTPBuilder
+
 	// SetOut is the output of the command
 	SetOut(interface{}) HTTPBuilder
 
@@ -66,6 +69,11 @@ func (b *httpBuilder) SetURL(url string) HTTPBuilder {
 
 func (b *httpBuilder) SetMethod(method string) HTTPBuilder {
 	b.method = method
+	return b
+}
+
+func (b *httpBuilder) AddHeader(key, value string) HTTPBuilder {
+	b.headers[key] = value
 	return b
 }
 

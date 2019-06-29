@@ -24,6 +24,9 @@ type FaaSHTTPBuilder interface {
 	// SetBody is the content for the invoke
 	SetBody(interface{}) FaaSHTTPBuilder
 
+	// AddHeader to the request
+	AddHeader(string, string) FaaSHTTPBuilder
+
 	// SetOut is the output of the invoke
 	SetOut(interface{}) FaaSHTTPBuilder
 
@@ -61,6 +64,11 @@ func (b *faasHTTPBuilder) SetLogger(logger func(string, ...interface{})) FaaSHTT
 
 func (b *faasHTTPBuilder) SetBody(body interface{}) FaaSHTTPBuilder {
 	b.builder.SetBody(body)
+	return b
+}
+
+func (b *faasHTTPBuilder) AddHeader(key, value string) FaaSHTTPBuilder {
+	b.builder.AddHeader(key, value)
 	return b
 }
 
