@@ -1,6 +1,8 @@
 package stores
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -9,16 +11,61 @@ import (
 	"github.com/contextgg/go-sdk/autha"
 )
 
+const format = "_ctx_auth_%s"
+
+var (
+	// ErrKeyNotFound when you can't find the key in the session
+	ErrKeyNotFound = errors.New("Key not found")
+	// ErrValWrongType when the value is the wrong type
+	ErrValWrongType = errors.New("Value wrong type")
+	// ErrSessionWrongType when the value is the wrong type
+	ErrSessionWrongType = errors.New("Session wrong type")
+)
+
 type sessionStore struct {
 	cookieStore *sessions.CookieStore
 }
 
-func (s *sessionStore) Load(string, *http.Request) (autha.Session, error) {
-	return nil, nil
+func (s *sessionStore) Load(connection string, r *http.Request) (autha.Session, error) {
+	name := fmt.Sprintf(format, connection)
+	sess, err := s.cookieStore.Get(r, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &session{inner: sess}, nil
 }
 
-func (s *sessionStore) Save(string, http.ResponseWriter, *http.Request) error {
+func (s *sessionStore) Save(sess autha.Session, w http.ResponseWriter, r *http.Request) error {
+	wrap, ok := sess.(*session)
+	if !ok {
+		return ErrSessionWrongType
+	}
+
+	return wrap.inner.Save(r, w)
+}
+
+type session struct {
+	inner *sessions.Session
+}
+
+func (s *session) Set(key, val string) error {
+	s.inner.Values[key] = val
 	return nil
+}
+
+func (s *session) Get(key string) (string, error) {
+	val, ok := s.inner.Values[key]
+	if !ok {
+		return "", ErrKeyNotFound
+	}
+
+	real, ok := val.(string)
+	if !ok {
+		return "", ErrValWrongType
+	}
+
+	return real, nil
 }
 
 // NewSessionStore creates a new session store

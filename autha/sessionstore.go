@@ -16,7 +16,7 @@ type SessionStore interface {
 	Load(string, *http.Request) (Session, error)
 
 	// Save the session to the request
-	Save(string, http.ResponseWriter, *http.Request) error
+	Save(Session, http.ResponseWriter, *http.Request) error
 }
 
 // Session represents a providers session

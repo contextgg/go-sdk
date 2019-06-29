@@ -1,9 +1,8 @@
 package autha
 
 import (
-	"encoding/json"
-	"log"
 	"net/http"
+	"net/url"
 )
 
 var (
@@ -15,6 +14,7 @@ var (
 type Config struct {
 	connection   string
 	loginURL     string
+	errorURL     string
 	authProvider AuthProvider
 	sessionStore SessionStore
 	userProvider UserProvider
@@ -25,6 +25,7 @@ type Config struct {
 func NewConfig(
 	connection string,
 	loginURL string,
+	errorURL string,
 	authProvider AuthProvider,
 	sessionStore SessionStore,
 	userProvider UserProvider,
@@ -32,6 +33,7 @@ func NewConfig(
 	return &Config{
 		connection:   connection,
 		loginURL:     loginURL,
+		errorURL:     errorURL,
 		authProvider: authProvider,
 		sessionStore: sessionStore,
 		userProvider: userProvider,
@@ -39,20 +41,35 @@ func NewConfig(
 	}
 }
 
+func (c *Config) fullErrorURL(errorType string) string {
+	str := c.errorURL
+	if len(str) == 0 {
+		str = c.loginURL
+	}
+	u, _ := url.Parse(str)
+
+	q := u.Query()
+	q.Set("error.type", errorType)
+
+	u.RawQuery = q.Encode()
+
+	return u.String()
+}
+
 // Begin the auth method
 func (c *Config) Begin(w http.ResponseWriter, r *http.Request) {
 	// get the current session!
 	session, err := c.sessionStore.Load(c.connection, r)
 	if err != nil {
-		// TODO go back to the error page.
+		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusBadRequest)
 		return
 	}
 
 	url := c.authProvider.BeginAuth(session)
 
 	// save the session
-	if err := c.sessionStore.Save(c.connection, w, r); err != nil {
-		// TODO go back to the error page.
+	if err := c.sessionStore.Save(session, w, r); err != nil {
+		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusBadRequest)
 		return
 	}
 
@@ -63,7 +80,7 @@ func (c *Config) Begin(w http.ResponseWriter, r *http.Request) {
 func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	session, err := c.sessionStore.Load(c.connection, r)
 	if err != nil {
-		// TODO go back to the error page.
+		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusBadRequest)
 		return
 	}
 
@@ -79,35 +96,26 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, _ := json.Marshal(id)
-	log.Printf("ID: %s", string(data))
+	// TODO what about if we are linking?
 
-	// userSession, err := c.userStore.Load(r)
-	// if err != nil {
-	// 	// TODO go back to the error page.
-	// 	return
-	// }
+	// if we have an id store it!
+	user, err := c.userProvider.Login(c.connection, id, token)
+	if err != nil {
+		http.Redirect(w, r, c.fullErrorURL("user"), http.StatusBadRequest)
+		return
+	}
 
-	// // TODO what about if we are linking?
-
-	// // if we have an id store it!
-	// user, err := c.userProvider.Login(c.connection, id, token)
-	// if err != nil {
-	// 	// TODO go back to the error page.
-	// 	return
-	// }
-
-	// if err != c.userStore.Save(w, r, id, user.Status); err != nil {
-	// 	// TODO go back to the error page.
-	// 	return
-	// }
+	if err := c.userStore.Save(user, w, r); err != nil {
+		http.Redirect(w, r, c.fullErrorURL("user"), http.StatusBadRequest)
+		return
+	}
 
 	// // save the session
-	// if err := c.sessionStore.Save(c.connection, w, r); err != nil {
-	// 	// TODO go back to the error page.
-	// 	return
-	// }
+	if err := c.sessionStore.Save(session, w, r); err != nil {
+		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusBadRequest)
+		return
+	}
 
 	// what's the next step?
-
+	http.Redirect(w, r, c.loginURL, http.StatusBadRequest)
 }

@@ -56,6 +56,16 @@ const (
 	ScopeChatLogin string = "chat_login"
 )
 
+// CurrentUser the object representing the current discord user
+type CurrentUser struct {
+	ID          int    `json:"_id"`
+	Name        string `json:"name"`
+	Email       string `json:"email"`
+	Nickname    string `json:"display_name"`
+	AvatarURL   string `json:"logo"`
+	Description string `json:"bio"`
+}
+
 type provider struct {
 	config *oauth2.Config
 }
@@ -112,11 +122,12 @@ func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*auth
 	accessToken := t.AccessToken
 
 	// todo get the user!
-	// var user CurrentUser
+	var user CurrentUser
 	status, err := httpbuilder.New().
-		SetURL("https://discordapp.com/api/users/@me").
+		SetURL(userEndpoint).
 		SetAuthToken(authType, accessToken).
-		// SetOut(&user).
+		AddHeader("Accept", "application/vnd.twitchtv.v3+json").
+		SetOut(&user).
 		SetLogger(log.Printf).
 		Do()
 	if err != nil {
@@ -128,7 +139,7 @@ func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*auth
 
 	id := &autha.Identity{
 		Provider: p.Name(),
-		ID:       user.ID,
+		ID:       fmt.Sprintf("%d", user.ID),
 		Profile:  user,
 	}
 	return id, nil
@@ -158,7 +169,7 @@ func newConfig(clientID, clientSecret, callbackURL string, scopes []string) *oau
 			c.Scopes = append(c.Scopes, scope)
 		}
 	} else {
-		c.Scopes = []string{ScopeIdentify}
+		c.Scopes = []string{ScopeUserRead}
 	}
 
 	return c

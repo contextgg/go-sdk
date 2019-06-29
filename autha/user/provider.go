@@ -6,7 +6,14 @@ type provider struct {
 }
 
 func (p *provider) Login(connection string, id *autha.Identity, token autha.Token) (*autha.User, error) {
-	return nil, nil
+	// fake the login for now!
+	u := &autha.User{
+		Connection: connection,
+		Provider:   "none",
+		ID:         id.ID,
+		State:      "OK",
+	}
+	return u, nil
 }
 
 // NewProvider creates a new user provider
