@@ -86,13 +86,13 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 
 	token, err := c.authProvider.Authorize(session, r.URL.Query())
 	if err != nil {
-		// TODO go back to the error page.
+		http.Redirect(w, r, c.fullErrorURL("id"), http.StatusBadRequest)
 		return
 	}
 
 	id, err := c.authProvider.LoadIdentity(token, session)
 	if err != nil {
-		// TODO go back to the error page.
+		http.Redirect(w, r, c.fullErrorURL("id"), http.StatusBadRequest)
 		return
 	}
 

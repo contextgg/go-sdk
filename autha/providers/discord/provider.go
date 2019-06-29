@@ -3,7 +3,6 @@ package discord
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/contextgg/go-sdk/gen"
@@ -114,10 +113,10 @@ func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*auth
 	// todo get the user!
 	var user CurrentUser
 	status, err := httpbuilder.New().
-		SetURL("https://discordapp.com/api/users/@me").
+		SetURL(userEndpoint).
 		SetAuthToken(authType, accessToken).
 		SetOut(&user).
-		SetLogger(log.Printf).
+		// SetLogger(log.Printf).
 		Do()
 	if err != nil {
 		return nil, err
