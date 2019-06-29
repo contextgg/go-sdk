@@ -105,6 +105,7 @@ func (p *provider) Authorize(session autha.Session, params autha.Params) (autha.
 
 	var content string
 	status, err := httpbuilder.New().
+		SetMethod(http.MethodPost).
 		SetURL(apiLoginEndpoint).
 		SetBody(v).
 		SetOut(&content).
