@@ -61,7 +61,7 @@ func (c *Config) Begin(w http.ResponseWriter, r *http.Request) {
 	// get the current session!
 	session, err := c.sessionStore.Load(c.connection, r)
 	if err != nil {
-		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusBadRequest)
+		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
 		return
 	}
 
@@ -69,7 +69,7 @@ func (c *Config) Begin(w http.ResponseWriter, r *http.Request) {
 
 	// save the session
 	if err := c.sessionStore.Save(session, w, r); err != nil {
-		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusBadRequest)
+		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
 		return
 	}
 
@@ -80,19 +80,19 @@ func (c *Config) Begin(w http.ResponseWriter, r *http.Request) {
 func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	session, err := c.sessionStore.Load(c.connection, r)
 	if err != nil {
-		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusBadRequest)
+		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
 		return
 	}
 
 	token, err := c.authProvider.Authorize(session, r.URL.Query())
 	if err != nil {
-		http.Redirect(w, r, c.fullErrorURL("id"), http.StatusBadRequest)
+		http.Redirect(w, r, c.fullErrorURL("id"), http.StatusFound)
 		return
 	}
 
 	id, err := c.authProvider.LoadIdentity(token, session)
 	if err != nil {
-		http.Redirect(w, r, c.fullErrorURL("id"), http.StatusBadRequest)
+		http.Redirect(w, r, c.fullErrorURL("id"), http.StatusFound)
 		return
 	}
 
@@ -101,21 +101,21 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	// if we have an id store it!
 	user, err := c.userProvider.Login(c.connection, id, token)
 	if err != nil {
-		http.Redirect(w, r, c.fullErrorURL("user"), http.StatusBadRequest)
+		http.Redirect(w, r, c.fullErrorURL("user"), http.StatusFound)
 		return
 	}
 
 	if err := c.userStore.Save(user, w, r); err != nil {
-		http.Redirect(w, r, c.fullErrorURL("user"), http.StatusBadRequest)
+		http.Redirect(w, r, c.fullErrorURL("user"), http.StatusFound)
 		return
 	}
 
 	// // save the session
 	if err := c.sessionStore.Save(session, w, r); err != nil {
-		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusBadRequest)
+		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
 		return
 	}
 
 	// what's the next step?
-	http.Redirect(w, r, c.loginURL, http.StatusBadRequest)
+	http.Redirect(w, r, c.loginURL, http.StatusFound)
 }
