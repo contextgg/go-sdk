@@ -19,6 +19,9 @@ var DefaultHTTPClient = &http.Client{
 
 // HTTPBuilder used to build a fluent interface for http requests
 type HTTPBuilder interface {
+	// SetClient will set the underlying client
+	SetClient(client *http.Client) HTTPBuilder
+
 	// SetURL will change the current URL for the query
 	SetURL(string) HTTPBuilder
 
@@ -30,6 +33,9 @@ type HTTPBuilder interface {
 
 	// AddHeader to the request
 	AddHeader(string, string) HTTPBuilder
+
+	// AddQuery to the request
+	AddQuery(string, string) HTTPBuilder
 
 	// SetOut is the output of the command
 	SetOut(interface{}) HTTPBuilder
@@ -57,9 +63,15 @@ type httpBuilder struct {
 	authType  string
 	authToken string
 	headers   map[string]string
+	queries   map[string]string
 	body      interface{}
 	logger    func(string, ...interface{})
 	out       interface{}
+}
+
+func (b *httpBuilder) SetClient(client *http.Client) HTTPBuilder {
+	b.client = client
+	return b
 }
 
 func (b *httpBuilder) SetURL(url string) HTTPBuilder {
@@ -74,6 +86,11 @@ func (b *httpBuilder) SetMethod(method string) HTTPBuilder {
 
 func (b *httpBuilder) AddHeader(key, value string) HTTPBuilder {
 	b.headers[key] = value
+	return b
+}
+
+func (b *httpBuilder) AddQuery(key, value string) HTTPBuilder {
+	b.queries[key] = value
 	return b
 }
 
@@ -151,6 +168,13 @@ func (b *httpBuilder) Do() (int, error) {
 		req.Header.Add(key, val)
 	}
 
+	query := req.URL.Query()
+	// Add queries
+	for key, val := range b.queries {
+		query.Set(key, val)
+	}
+	req.URL.RawQuery = query.Encode()
+
 	if b.authType != "" {
 		auth := fmt.Sprintf("%s %s", b.authType, b.authToken)
 		req.Header.Set("Authorization", strings.Trim(auth, " "))
@@ -195,6 +219,7 @@ func New() HTTPBuilder {
 		client:  DefaultHTTPClient,
 		method:  http.MethodGet,
 		headers: make(map[string]string),
+		queries: make(map[string]string),
 		logger:  func(string, ...interface{}) {},
 	}
 }

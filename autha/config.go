@@ -68,7 +68,12 @@ func (c *Config) Begin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url := c.authProvider.BeginAuth(session)
+	url, err := c.authProvider.BeginAuth(session)
+	if err != nil {
+		http.Redirect(w, r, c.fullErrorURL("auth"), http.StatusFound)
+		log.Print(fmt.Errorf("Error Begin Auth: %s", err.Error()))
+		return
+	}
 
 	// save the session
 	if err := c.sessionStore.Save(session, w, r); err != nil {

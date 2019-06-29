@@ -61,7 +61,7 @@ func (p *provider) Name() string {
 	return "discord"
 }
 
-func (p *provider) BeginAuth(session autha.Session) string {
+func (p *provider) BeginAuth(session autha.Session) (string, error) {
 	// state for the oauth grant!
 	state := gen.RandomString(64)
 
@@ -69,7 +69,7 @@ func (p *provider) BeginAuth(session autha.Session) string {
 	session.Set("state", state)
 
 	// generate the url
-	return p.config.AuthCodeURL(state, oauth2.AccessTypeOnline)
+	return p.config.AuthCodeURL(state, oauth2.AccessTypeOnline), nil
 }
 
 func (p *provider) Authorize(session autha.Session, params autha.Params) (autha.Token, error) {

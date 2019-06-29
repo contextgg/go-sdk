@@ -15,7 +15,7 @@ type AuthProvider interface {
 	Name() string
 
 	// BeginAuth the start of a token exchange
-	BeginAuth(Session) string
+	BeginAuth(Session) (string, error)
 
 	// Authorize confirm everything is ok
 	Authorize(Session, Params) (Token, error)
