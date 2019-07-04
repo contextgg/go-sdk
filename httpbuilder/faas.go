@@ -15,6 +15,9 @@ type FaaSHTTPBuilder interface {
 	// SetMethod the method used to invoke
 	SetMethod(string) FaaSHTTPBuilder
 
+	// SetAuthBasic basic auth for the request
+	SetAuthBasic(string, string) FaaSHTTPBuilder
+
 	// SetAsync will enable an async function call
 	SetAsync() FaaSHTTPBuilder
 
@@ -49,6 +52,11 @@ func (b *faasHTTPBuilder) SetFunction(name string) FaaSHTTPBuilder {
 
 func (b *faasHTTPBuilder) SetMethod(method string) FaaSHTTPBuilder {
 	b.builder.SetMethod(method)
+	return b
+}
+
+func (b *faasHTTPBuilder) SetAuthBasic(username, password string) FaaSHTTPBuilder {
+	b.builder.SetAuthBasic(username, password)
 	return b
 }
 

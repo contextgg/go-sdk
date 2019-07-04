@@ -13,7 +13,23 @@ type User struct {
 	Provider   string `json:"provider"`
 }
 
+// UserLogin for a user authing
+type UserLogin struct {
+	Connection string    `json:"connection"`
+	Identity   *Identity `json:"identity"`
+	Token      Token     `json:"token"`
+}
+
+// NewUserLogin create a new login model
+func NewUserLogin(connection string, identity *Identity, token Token) *UserLogin {
+	return &UserLogin{
+		Connection: connection,
+		Identity:   identity,
+		Token:      token,
+	}
+}
+
 // UserProvider is the common interface for users
 type UserProvider interface {
-	Login(string, *Identity, Token) (*User, error)
+	Login(*UserLogin) (*User, error)
 }

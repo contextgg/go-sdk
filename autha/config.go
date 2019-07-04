@@ -111,7 +111,7 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	// TODO what about if we are linking?
 
 	// if we have an id store it!
-	user, err := c.userProvider.Login(c.connection, id, token)
+	user, err := c.userProvider.Login(NewUserLogin(c.connection, id, token))
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("user"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Login: %s", err.Error()))
