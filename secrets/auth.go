@@ -31,8 +31,8 @@ func LoadBasicAuth(prefix string) *BasicAuthCredentials {
 	}
 
 	passwordKey := prefix + "-basic-auth-password"
-	password, err := ReadSecret(passwordKey)
-	if err != nil {
+	password := MustReadSecret(passwordKey, "")
+	if password == "" {
 		return nil
 	}
 
