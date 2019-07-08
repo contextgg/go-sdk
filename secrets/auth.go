@@ -24,6 +24,10 @@ type BasicAuthCredentials struct {
 
 // LoadBasicAuth will load the secrets from disk
 func LoadBasicAuth(prefix string) *BasicAuthCredentials {
+	if prefix == "" {
+		return nil
+	}
+
 	usernameKey := prefix + "-basic-auth-username"
 	username := MustReadSecret(usernameKey, "")
 	if username == "" {

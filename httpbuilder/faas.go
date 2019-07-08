@@ -18,6 +18,9 @@ type FaaSHTTPBuilder interface {
 	// SetAuthBasic basic auth for the request
 	SetAuthBasic(string, string) FaaSHTTPBuilder
 
+	// SetAuthPrefix load up basic auth from ENV
+	SetAuthPrefix(string) FaaSHTTPBuilder
+
 	// SetAsync will enable an async function call
 	SetAsync() FaaSHTTPBuilder
 
@@ -57,6 +60,11 @@ func (b *faasHTTPBuilder) SetMethod(method string) FaaSHTTPBuilder {
 
 func (b *faasHTTPBuilder) SetAuthBasic(username, password string) FaaSHTTPBuilder {
 	b.builder.SetAuthBasic(username, password)
+	return b
+}
+
+func (b *faasHTTPBuilder) SetAuthPrefix(prefix string) FaaSHTTPBuilder {
+	b.authPrefix = prefix
 	return b
 }
 
@@ -113,7 +121,6 @@ func NewFaaS() FaaSHTTPBuilder {
 	builder := New()
 
 	return &faasHTTPBuilder{
-		builder:    builder,
-		authPrefix: "fn",
+		builder: builder,
 	}
 }
