@@ -15,8 +15,8 @@ type provider struct {
 }
 
 // connection string, id *autha.Identity, token autha.Token
-func (p *provider) Login(m *autha.UserLogin) (*autha.User, error) {
-	var result autha.User
+func (p *provider) Login(m *autha.UserLogin) (*autha.IdentityID, error) {
+	var result autha.IdentityID
 
 	status, err := httpbuilder.NewFaaS().
 		SetAuthBasic(p.username, p.password).

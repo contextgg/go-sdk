@@ -20,6 +20,11 @@ type UserLogin struct {
 	Token      Token     `json:"token"`
 }
 
+// IdentityID so we can lookup the User by ID
+type IdentityID struct {
+	ID string `json:"id"`
+}
+
 // NewUserLogin create a new login model
 func NewUserLogin(connection string, identity *Identity, token Token) *UserLogin {
 	return &UserLogin{
@@ -31,5 +36,5 @@ func NewUserLogin(connection string, identity *Identity, token Token) *UserLogin
 
 // UserProvider is the common interface for users
 type UserProvider interface {
-	Login(*UserLogin) (*User, error)
+	Login(*UserLogin) (*IdentityID, error)
 }

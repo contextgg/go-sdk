@@ -101,9 +101,9 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := c.authProvider.LoadIdentity(token, session)
+	identity, err := c.authProvider.LoadIdentity(token, session)
 	if err != nil {
-		http.Redirect(w, r, c.fullErrorURL("id"), http.StatusFound)
+		http.Redirect(w, r, c.fullErrorURL("identity"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Load Identity: %s", err.Error()))
 		return
 	}
@@ -111,20 +111,20 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	// TODO what about if we are linking?
 
 	// if we have an id store it!
-	user, err := c.userProvider.Login(NewUserLogin(c.connection, id, token))
+	id, err := c.userProvider.Login(NewUserLogin(c.connection, identity, token))
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("user"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Login: %s", err.Error()))
 		return
 	}
 
-	if err := c.userStore.Save(user, w, r); err != nil {
-		http.Redirect(w, r, c.fullErrorURL("user"), http.StatusFound)
-		log.Print(fmt.Errorf("Error User Save: %s", err.Error()))
+	if err := c.userStore.Save(id, w, r); err != nil {
+		http.Redirect(w, r, c.fullErrorURL("id"), http.StatusFound)
+		log.Print(fmt.Errorf("Error IdentityID Save: %s", err.Error()))
 		return
 	}
 
-	// // save the session
+	// save the session
 	if err := c.sessionStore.Save(session, w, r); err != nil {
 		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Session Save: %s", err.Error()))
