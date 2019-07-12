@@ -58,7 +58,7 @@ const (
 
 // CurrentUser the object representing the current discord user
 type CurrentUser struct {
-	ID               int    `json:"_id"`
+	ID               string `json:"_id"`
 	Bio              string `json:"bio"`
 	Name             string `json:"name"`
 	DisplayName      string `json:"display_name"`
@@ -142,7 +142,7 @@ func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*auth
 
 	id := &autha.Identity{
 		Provider: p.Name(),
-		ID:       fmt.Sprintf("%d", user.ID),
+		ID:       user.ID,
 		Username: user.Name,
 		Email:    user.Email,
 		Profile:  user,
