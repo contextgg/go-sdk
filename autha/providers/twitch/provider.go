@@ -58,12 +58,15 @@ const (
 
 // CurrentUser the object representing the current discord user
 type CurrentUser struct {
-	ID          int    `json:"_id"`
-	Name        string `json:"name"`
-	Email       string `json:"email"`
-	Nickname    string `json:"display_name"`
-	AvatarURL   string `json:"logo"`
-	Description string `json:"bio"`
+	ID               int    `json:"_id"`
+	Bio              string `json:"bio"`
+	Name             string `json:"name"`
+	DisplayName      string `json:"display_name"`
+	Email            string `json:"email"`
+	EmailVerified    bool   `json:"email_verified"`
+	Logo             string `json:"logo"`
+	Partnered        bool   `json:"partnered"`
+	TwitterConnected bool   `json:"twitter_connected"`
 }
 
 type provider struct {
@@ -118,15 +121,15 @@ func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*auth
 		return nil, errors.New("Wrong token type")
 	}
 
-	authType := t.TokenType
 	accessToken := t.AccessToken
 
 	// todo get the user!
 	var user CurrentUser
 	status, err := httpbuilder.New().
 		SetURL(userEndpoint).
-		SetAuthToken(authType, accessToken).
-		AddHeader("Accept", "application/vnd.twitchtv.v3+json").
+		SetAuthToken("OAuth", accessToken).
+		AddHeader("Client-ID", p.config.ClientID).
+		AddHeader("Accept", "application/vnd.twitchtv.v5+json").
 		SetOut(&user).
 		SetLogger(log.Printf).
 		Do()
