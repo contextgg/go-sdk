@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 )
@@ -31,6 +32,9 @@ type HTTPBuilder interface {
 
 	// SetBody is the input of the command
 	SetBody(interface{}) HTTPBuilder
+
+	// AppendPath will append the the URL set
+	AppendPath(string) HTTPBuilder
 
 	// AddHeader to the request
 	AddHeader(string, string) HTTPBuilder
@@ -58,16 +62,17 @@ type HTTPBuilder interface {
 }
 
 type httpBuilder struct {
-	client    *http.Client
-	url       string
-	method    string
-	authType  string
-	authToken string
-	headers   map[string]string
-	queries   map[string]string
-	body      interface{}
-	logger    func(string, ...interface{})
-	out       interface{}
+	client     *http.Client
+	url        string
+	appendPath string
+	method     string
+	authType   string
+	authToken  string
+	headers    map[string]string
+	queries    map[string]string
+	body       interface{}
+	logger     func(string, ...interface{})
+	out        interface{}
 }
 
 func (b *httpBuilder) SetClient(client *http.Client) HTTPBuilder {
@@ -131,6 +136,11 @@ func (b *httpBuilder) SetBody(body interface{}) HTTPBuilder {
 	return b
 }
 
+func (b *httpBuilder) AppendPath(path string) HTTPBuilder {
+	b.appendPath = path
+	return b
+}
+
 // Do the query
 func (b *httpBuilder) Do() (int, error) {
 	var headers = make(map[string]string)
@@ -158,8 +168,10 @@ func (b *httpBuilder) Do() (int, error) {
 		}
 	}
 
-	b.logger("Method %s, URL %s", b.method, b.url)
-	req, err := http.NewRequest(b.method, b.url, body)
+	fullPath := path.Join(b.url, b.appendPath)
+
+	b.logger("Method %s, URL %s", b.method, fullPath)
+	req, err := http.NewRequest(b.method, fullPath, body)
 	if err != nil {
 		return 0, err
 	}
