@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"path"
 	"strings"
 	"time"
 )
@@ -168,7 +167,10 @@ func (b *httpBuilder) Do() (int, error) {
 		}
 	}
 
-	fullPath := path.Join(b.url, b.appendPath)
+	fullPath := b.url
+	if len(b.appendPath) > 0 {
+		fullPath = strings.TrimSuffix(b.url, "/") + "/" + strings.TrimPrefix(b.appendPath, "/")
+	}
 
 	b.logger("Method %s, URL %s", b.method, fullPath)
 	req, err := http.NewRequest(b.method, fullPath, body)
