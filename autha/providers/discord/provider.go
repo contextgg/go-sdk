@@ -127,6 +127,8 @@ func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*auth
 	id := &autha.Identity{
 		Provider: p.Name(),
 		ID:       user.ID,
+		Username: fmt.Sprintf("%s#%s", user.Username, user.Discriminator),
+		Email:    user.Email,
 		Profile:  user,
 	}
 	return id, nil

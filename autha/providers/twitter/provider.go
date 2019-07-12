@@ -112,6 +112,8 @@ func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*auth
 	id := &autha.Identity{
 		Provider: p.Name(),
 		ID:       user.ID,
+		Username: user.ScreenName,
+		Email:    user.Email,
 		Profile:  user,
 	}
 	return id, nil

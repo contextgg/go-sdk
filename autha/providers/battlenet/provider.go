@@ -1,9 +1,8 @@
-package discord
+package battlenet
 
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/contextgg/go-sdk/gen"
@@ -15,55 +14,15 @@ import (
 )
 
 const (
-	authURL      string = "https://api.twitch.tv/kraken/oauth2/authorize"
-	tokenURL     string = "https://api.twitch.tv/kraken/oauth2/token"
-	userEndpoint string = "https://api.twitch.tv/kraken/user"
-)
-
-const (
-	// ScopeUserRead provides read access to non-public user information, such
-	// as their email address.
-	ScopeUserRead string = "user_read"
-	// ScopeUserBlocksEdit provides the ability to ignore or unignore on
-	// behalf of a user.
-	ScopeUserBlocksEdit string = "user_blocks_edit"
-	// ScopeUserBlocksRead provides read access to a user's list of ignored
-	// users.
-	ScopeUserBlocksRead string = "user_blocks_read"
-	// ScopeUserFollowsEdit provides access to manage a user's followed
-	// channels.
-	ScopeUserFollowsEdit string = "user_follows_edit"
-	// ScopeChannelRead provides read access to non-public channel information,
-	// including email address and stream key.
-	ScopeChannelRead string = "channel_read"
-	// ScopeChannelEditor provides write access to channel metadata (game,
-	// status, etc).
-	ScopeChannelEditor string = "channel_editor"
-	// ScopeChannelCommercial provides access to trigger commercials on
-	// channel.
-	ScopeChannelCommercial string = "channel_commercial"
-	// ScopeChannelStream provides the ability to reset a channel's stream key.
-	ScopeChannelStream string = "channel_stream"
-	// ScopeChannelSubscriptions provides read access to all subscribers to
-	// your channel.
-	ScopeChannelSubscriptions string = "channel_subscriptions"
-	// ScopeUserSubscriptions provides read access to subscriptions of a user.
-	ScopeUserSubscriptions string = "user_subscriptions"
-	// ScopeChannelCheckSubscription provides read access to check if a user is
-	// subscribed to your channel.
-	ScopeChannelCheckSubscription string = "channel_check_subscription"
-	// ScopeChatLogin provides the ability to log into chat and send messages.
-	ScopeChatLogin string = "chat_login"
+	authURL      string = "https://us.battle.net/oauth/authorize"
+	tokenURL     string = "https://us.battle.net/oauth/token"
+	endpointUser string = "https://us.battle.net/oauth/userinfo"
 )
 
 // CurrentUser the object representing the current discord user
 type CurrentUser struct {
-	ID          int    `json:"_id"`
-	Name        string `json:"name"`
-	Email       string `json:"email"`
-	Nickname    string `json:"display_name"`
-	AvatarURL   string `json:"logo"`
-	Description string `json:"bio"`
+	ID        int64  `json:"id"`
+	Battletag string `json:"battletag"`
 }
 
 type provider struct {
@@ -71,7 +30,7 @@ type provider struct {
 }
 
 func (p *provider) Name() string {
-	return "twitch"
+	return "battlenet"
 }
 
 func (p *provider) BeginAuth(session autha.Session) (string, error) {
@@ -109,6 +68,8 @@ func (p *provider) Authorize(session autha.Session, params autha.Params) (autha.
 		return nil, errors.New("Invalid token received from provider")
 	}
 
+	// TODO what to do with the token.
+
 	return token, nil
 }
 
@@ -124,11 +85,9 @@ func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*auth
 	// todo get the user!
 	var user CurrentUser
 	status, err := httpbuilder.New().
-		SetURL(userEndpoint).
+		SetURL(endpointUser).
 		SetAuthToken(authType, accessToken).
-		AddHeader("Accept", "application/vnd.twitchtv.v3+json").
 		SetOut(&user).
-		SetLogger(log.Printf).
 		Do()
 	if err != nil {
 		return nil, err
@@ -140,8 +99,6 @@ func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*auth
 	id := &autha.Identity{
 		Provider: p.Name(),
 		ID:       fmt.Sprintf("%d", user.ID),
-		Username: user.Name,
-		Email:    user.Email,
 		Profile:  user,
 	}
 	return id, nil
@@ -171,7 +128,7 @@ func newConfig(clientID, clientSecret, callbackURL string, scopes []string) *oau
 			c.Scopes = append(c.Scopes, scope)
 		}
 	} else {
-		c.Scopes = []string{ScopeUserRead}
+		c.Scopes = []string{ScopeIdentify}
 	}
 
 	return c
