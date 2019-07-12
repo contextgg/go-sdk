@@ -128,7 +128,7 @@ func newConfig(clientID, clientSecret, callbackURL string, scopes []string) *oau
 			c.Scopes = append(c.Scopes, scope)
 		}
 	} else {
-		c.Scopes = []string{ScopeIdentify}
+		c.Scopes = []string{}
 	}
 
 	return c
