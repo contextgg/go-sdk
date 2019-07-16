@@ -10,6 +10,8 @@ import (
 	"github.com/contextgg/go-sdk/httpbuilder"
 )
 
+const headerName = "_ctx_type_name_"
+
 type provider struct {
 	functionName string
 	namespace    uuid.UUID
@@ -39,6 +41,7 @@ func (p *provider) Login(m *autha.UserLogin) (*autha.IdentityID, error) {
 		SetMethod(http.MethodPost).
 		SetBody(&raw).
 		SetOut(&result).
+		AddHeader(headerName, "Login").
 		Do()
 
 	if err != nil {
