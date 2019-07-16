@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -20,9 +21,10 @@ type provider struct {
 }
 
 // connection string, id *autha.Identity, token autha.Token
-func (p *provider) Login(m *autha.UserLogin) (*autha.IdentityID, error) {
+func (p *provider) Login(ctx context.Context, m *autha.UserLogin) (*autha.IdentityID, error) {
 	ns := uuid.NewSHA1(p.namespace, []byte(m.Connection))
-	id := uuid.NewSHA1(ns, []byte(m.Identity.ID))
+	uid := uuid.NewSHA1(ns, []byte(m.Identity.ID))
+	id := uid.String()
 
 	// Inject an aggregate id.
 	raw := struct {
@@ -30,7 +32,7 @@ func (p *provider) Login(m *autha.UserLogin) (*autha.IdentityID, error) {
 		AggregateID string
 	}{
 		m,
-		id.String(),
+		id,
 	}
 
 	status, err := httpbuilder.NewFaaS().
@@ -39,15 +41,15 @@ func (p *provider) Login(m *autha.UserLogin) (*autha.IdentityID, error) {
 		SetMethod(http.MethodPost).
 		SetBody(&raw).
 		AddHeader(headerName, "Login").
-		Do()
+		Do(ctx)
 
 	if err != nil {
 		return nil, err
 	}
-	if status < 200 && status > 400 {
+	if status < 200 || status > 400 {
 		return nil, errors.New("Invalid http status")
 	}
-	return &autha.IdentityID{ID: id.String()}, nil
+	return &autha.IdentityID{ID: id}, nil
 }
 
 // NewProvider creates a new user provider

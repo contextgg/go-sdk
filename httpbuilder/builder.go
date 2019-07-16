@@ -2,6 +2,7 @@ package httpbuilder
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/opentracing/opentracing-go"
 )
 
 // DefaultHTTPClient use a global client to get caching benefits
@@ -57,7 +60,7 @@ type HTTPBuilder interface {
 	SetLogger(func(string, ...interface{})) HTTPBuilder
 
 	// Do the HTTP Request
-	Do() (int, error)
+	Do(context.Context) (int, error)
 }
 
 type httpBuilder struct {
@@ -141,7 +144,7 @@ func (b *httpBuilder) AppendPath(path string) HTTPBuilder {
 }
 
 // Do the query
-func (b *httpBuilder) Do() (int, error) {
+func (b *httpBuilder) Do(ctx context.Context) (int, error) {
 	var headers = make(map[string]string)
 
 	var body io.Reader
@@ -198,6 +201,22 @@ func (b *httpBuilder) Do() (int, error) {
 		auth := fmt.Sprintf("%s %s", b.authType, b.authToken)
 		req.Header.Set("Authorization", strings.Trim(auth, " "))
 	}
+
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		// Transmit the span's TraceContext as HTTP headers on our
+		// outbound request.
+		opentracing.
+			GlobalTracer().
+			Inject(
+				span.Context(),
+				opentracing.HTTPHeaders,
+				opentracing.HTTPHeadersCarrier(req.Header),
+			)
+	}
+
+	// if c := coherence.FromContext(ctx); c != nil {
+	// 	c.Inject(req.Header)
+	// }
 
 	res, err := b.client.Do(req)
 	if err != nil {

@@ -1,6 +1,7 @@
 package httpbuilder
 
 import (
+	"context"
 	"os"
 	"strings"
 
@@ -37,7 +38,7 @@ type FaaSHTTPBuilder interface {
 	SetOut(interface{}) FaaSHTTPBuilder
 
 	// Do the HTTP Request
-	Do() (int, error)
+	Do(context.Context) (int, error)
 }
 
 type faasHTTPBuilder struct {
@@ -93,7 +94,7 @@ func (b *faasHTTPBuilder) SetOut(result interface{}) FaaSHTTPBuilder {
 	return b
 }
 
-func (b *faasHTTPBuilder) Do() (int, error) {
+func (b *faasHTTPBuilder) Do(ctx context.Context) (int, error) {
 	// build the url!.
 	gateway := os.Getenv("gateway_url")
 	if gateway == "" {
@@ -113,7 +114,7 @@ func (b *faasHTTPBuilder) Do() (int, error) {
 		b.builder.SetAuthBasic(creds.Username, creds.Password)
 	}
 
-	return b.builder.Do()
+	return b.builder.Do(ctx)
 }
 
 // NewFaaS will create a new FaaS HTTP Builder

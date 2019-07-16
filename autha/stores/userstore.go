@@ -45,7 +45,7 @@ func (s *userStore) Load(r *http.Request) (*autha.IdentityID, bool, error) {
 
 	// try convert it!
 	id, ok := sess.Values["id"].(string)
-	if !ok {
+	if !ok || len(id) < 1 {
 		return nil, false, errors.New("No ID found in session")
 	}
 

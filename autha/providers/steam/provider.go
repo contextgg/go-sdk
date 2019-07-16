@@ -1,6 +1,7 @@
 package steam
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -53,7 +54,7 @@ func (p *provider) Name() string {
 	return "steam"
 }
 
-func (p *provider) BeginAuth(session autha.Session) (string, error) {
+func (p *provider) BeginAuth(ctx context.Context, session autha.Session) (string, error) {
 	callbackURL, err := url.Parse(p.callbackURL)
 	if err != nil {
 		return "", err
@@ -82,7 +83,7 @@ func (p *provider) BeginAuth(session autha.Session) (string, error) {
 	return u.String(), nil
 }
 
-func (p *provider) Authorize(session autha.Session, params autha.Params) (autha.Token, error) {
+func (p *provider) Authorize(ctx context.Context, session autha.Session, params autha.Params) (autha.Token, error) {
 	if params.Get("openid.mode") != "id_res" {
 		return nil, errors.New("Mode must equal to \"id_res\"")
 	}
@@ -109,7 +110,7 @@ func (p *provider) Authorize(session autha.Session, params autha.Params) (autha.
 		SetURL(apiLoginEndpoint).
 		SetBody(v).
 		SetOut(&content).
-		Do()
+		Do(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +144,7 @@ func (p *provider) Authorize(session autha.Session, params autha.Params) (autha.
 	return t, nil
 }
 
-func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*autha.Identity, error) {
+func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session autha.Session) (*autha.Identity, error) {
 	stok, ok := token.(*steamToken)
 	if !ok {
 		return nil, errors.New("Invalid token")
@@ -155,7 +156,7 @@ func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*auth
 	status, err := httpbuilder.New().
 		SetURL(apiURL).
 		SetOut(&users).
-		Do()
+		Do(ctx)
 	if err != nil {
 		return nil, err
 	}

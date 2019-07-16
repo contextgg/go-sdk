@@ -60,6 +60,8 @@ func (c *Config) fullErrorURL(errorType string) string {
 
 // Begin the auth method
 func (c *Config) Begin(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	// get the current session!
 	session, err := c.sessionStore.Load(c.connection, r)
 	if err != nil {
@@ -68,7 +70,7 @@ func (c *Config) Begin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url, err := c.authProvider.BeginAuth(session)
+	url, err := c.authProvider.BeginAuth(ctx, session)
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("auth"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Begin Auth: %s", err.Error()))
@@ -87,6 +89,8 @@ func (c *Config) Begin(w http.ResponseWriter, r *http.Request) {
 
 // Callback for the provider
 func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	session, err := c.sessionStore.Load(c.connection, r)
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
@@ -94,14 +98,14 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := c.authProvider.Authorize(session, r.URL.Query())
+	token, err := c.authProvider.Authorize(ctx, session, r.URL.Query())
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("id"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Authorize: %s", err.Error()))
 		return
 	}
 
-	identity, err := c.authProvider.LoadIdentity(token, session)
+	identity, err := c.authProvider.LoadIdentity(ctx, token, session)
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("identity"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Load Identity: %s", err.Error()))
@@ -111,7 +115,7 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	// TODO what about if we are linking?
 
 	// if we have an id store it!
-	id, err := c.userProvider.Login(NewUserLogin(c.connection, identity, token))
+	id, err := c.userProvider.Login(r.Context(), NewUserLogin(c.connection, identity, token))
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("user"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Login: %s", err.Error()))

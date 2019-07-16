@@ -1,6 +1,7 @@
 package battlenet
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -33,7 +34,7 @@ func (p *provider) Name() string {
 	return "battlenet"
 }
 
-func (p *provider) BeginAuth(session autha.Session) (string, error) {
+func (p *provider) BeginAuth(ctx context.Context, session autha.Session) (string, error) {
 	// state for the oauth grant!
 	state := gen.RandomString(64)
 
@@ -44,7 +45,7 @@ func (p *provider) BeginAuth(session autha.Session) (string, error) {
 	return p.config.AuthCodeURL(state, oauth2.AccessTypeOnline), nil
 }
 
-func (p *provider) Authorize(session autha.Session, params autha.Params) (autha.Token, error) {
+func (p *provider) Authorize(ctx context.Context, session autha.Session, params autha.Params) (autha.Token, error) {
 	state := params.Get("state")
 	if len(state) == 0 {
 		return nil, errors.New("No state value in params")
@@ -73,7 +74,7 @@ func (p *provider) Authorize(session autha.Session, params autha.Params) (autha.
 	return token, nil
 }
 
-func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*autha.Identity, error) {
+func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session autha.Session) (*autha.Identity, error) {
 	t, ok := token.(*oauth2.Token)
 	if !ok {
 		return nil, errors.New("Wrong token type")
@@ -88,7 +89,7 @@ func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*auth
 		SetURL(endpointUser).
 		SetAuthToken(authType, accessToken).
 		SetOut(&user).
-		Do()
+		Do(ctx)
 	if err != nil {
 		return nil, err
 	}

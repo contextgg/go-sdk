@@ -1,5 +1,7 @@
 package autha
 
+import "context"
+
 // Identity represents the identity of a discord user
 type Identity struct {
 	Provider string      `json:"provider"`
@@ -15,11 +17,11 @@ type AuthProvider interface {
 	Name() string
 
 	// BeginAuth the start of a token exchange
-	BeginAuth(Session) (string, error)
+	BeginAuth(context.Context, Session) (string, error)
 
 	// Authorize confirm everything is ok
-	Authorize(Session, Params) (Token, error)
+	Authorize(context.Context, Session, Params) (Token, error)
 
 	// LoadIdentity will try to load the current users identity
-	LoadIdentity(Token, Session) (*Identity, error)
+	LoadIdentity(context.Context, Token, Session) (*Identity, error)
 }

@@ -1,6 +1,7 @@
 package discord
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -77,7 +78,7 @@ func (p *provider) Name() string {
 	return "twitch"
 }
 
-func (p *provider) BeginAuth(session autha.Session) (string, error) {
+func (p *provider) BeginAuth(ctx context.Context, session autha.Session) (string, error) {
 	// state for the oauth grant!
 	state := gen.RandomString(64)
 
@@ -88,7 +89,7 @@ func (p *provider) BeginAuth(session autha.Session) (string, error) {
 	return p.config.AuthCodeURL(state, oauth2.AccessTypeOnline), nil
 }
 
-func (p *provider) Authorize(session autha.Session, params autha.Params) (autha.Token, error) {
+func (p *provider) Authorize(ctx context.Context, session autha.Session, params autha.Params) (autha.Token, error) {
 	state := params.Get("state")
 	if len(state) == 0 {
 		return nil, errors.New("No state value in params")
@@ -115,7 +116,7 @@ func (p *provider) Authorize(session autha.Session, params autha.Params) (autha.
 	return token, nil
 }
 
-func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*autha.Identity, error) {
+func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session autha.Session) (*autha.Identity, error) {
 	t, ok := token.(*oauth2.Token)
 	if !ok {
 		return nil, errors.New("Wrong token type")
@@ -132,7 +133,7 @@ func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*auth
 		AddHeader("Accept", "application/vnd.twitchtv.v5+json").
 		SetOut(&user).
 		SetLogger(log.Printf).
-		Do()
+		Do(ctx)
 	if err != nil {
 		return nil, err
 	}

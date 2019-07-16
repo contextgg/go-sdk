@@ -1,6 +1,9 @@
 package autha
 
-import "errors"
+import (
+	"context"
+	"errors"
+)
 
 // ErrUserNotFound when a user doesn't exist
 var ErrUserNotFound = errors.New("User not found")
@@ -36,5 +39,5 @@ func NewUserLogin(connection string, identity *Identity, token Token) *UserLogin
 
 // UserProvider is the common interface for users
 type UserProvider interface {
-	Login(*UserLogin) (*IdentityID, error)
+	Login(context.Context, *UserLogin) (*IdentityID, error)
 }

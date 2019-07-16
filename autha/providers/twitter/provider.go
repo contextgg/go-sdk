@@ -1,6 +1,7 @@
 package twitter
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -43,7 +44,7 @@ func (p *provider) Name() string {
 	return "twitter"
 }
 
-func (p *provider) BeginAuth(session autha.Session) (string, error) {
+func (p *provider) BeginAuth(ctx context.Context, session autha.Session) (string, error) {
 	reqToken, url, err := p.consumer.GetRequestTokenAndUrl(p.callbackURL)
 	if err != nil {
 		return "", err
@@ -55,7 +56,7 @@ func (p *provider) BeginAuth(session autha.Session) (string, error) {
 	return url, nil
 }
 
-func (p *provider) Authorize(session autha.Session, params autha.Params) (autha.Token, error) {
+func (p *provider) Authorize(ctx context.Context, session autha.Session, params autha.Params) (autha.Token, error) {
 	code := params.Get("oauth_verifier")
 
 	reqToken, err := session.Get("request_token")
@@ -82,7 +83,7 @@ func (p *provider) Authorize(session autha.Session, params autha.Params) (autha.
 	return accessToken, err
 }
 
-func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*autha.Identity, error) {
+func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session autha.Session) (*autha.Identity, error) {
 	accessToken, ok := token.(*oauth.AccessToken)
 	if !ok {
 		return nil, errors.New("Invalid access token")
@@ -101,7 +102,7 @@ func (p *provider) LoadIdentity(token autha.Token, session autha.Session) (*auth
 		AddQuery("skip_status", "true").
 		AddQuery("include_email", "true").
 		SetOut(&user).
-		Do()
+		Do(ctx)
 	if err != nil {
 		return nil, err
 	}
