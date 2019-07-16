@@ -21,8 +21,6 @@ type provider struct {
 
 // connection string, id *autha.Identity, token autha.Token
 func (p *provider) Login(m *autha.UserLogin) (*autha.IdentityID, error) {
-	var result autha.IdentityID
-
 	ns := uuid.NewSHA1(p.namespace, []byte(m.Connection))
 	id := uuid.NewSHA1(ns, []byte(m.Identity.ID))
 
@@ -40,17 +38,16 @@ func (p *provider) Login(m *autha.UserLogin) (*autha.IdentityID, error) {
 		SetFunction(p.functionName).
 		SetMethod(http.MethodPost).
 		SetBody(&raw).
-		SetOut(&result).
 		AddHeader(headerName, "Login").
 		Do()
 
 	if err != nil {
 		return nil, err
 	}
-	if status != http.StatusOK {
+	if status < 200 && status > 400 {
 		return nil, errors.New("Invalid http status")
 	}
-	return &result, nil
+	return &autha.IdentityID{ID: id.String()}, nil
 }
 
 // NewProvider creates a new user provider

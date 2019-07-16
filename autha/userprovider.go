@@ -22,8 +22,7 @@ type UserLogin struct {
 
 // IdentityID so we can lookup the User by ID
 type IdentityID struct {
-	ID      string `json:"id"`
-	Version int    `json:"version"`
+	ID string `json:"id"`
 }
 
 // NewUserLogin create a new login model
