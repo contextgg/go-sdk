@@ -21,10 +21,8 @@ type provider struct {
 func (p *provider) Login(m *autha.UserLogin) (*autha.IdentityID, error) {
 	var result autha.IdentityID
 
-	aggregateID := uuid.NewSHA1(
-			uuid.NewSHA1(p.namespace, []byte(m.Connection)), []byte(m.Identity.ID)
-		).
-		String()
+	ns := uuid.NewSHA1(p.namespace, []byte(m.Connection))
+	id := uuid.NewSHA1(ns, []byte(m.Identity.ID))
 
 	// Inject an aggregate id.
 	raw := struct {
@@ -32,7 +30,7 @@ func (p *provider) Login(m *autha.UserLogin) (*autha.IdentityID, error) {
 		AggregateID string
 	}{
 		m,
-		aggregateID,
+		id.String(),
 	}
 
 	status, err := httpbuilder.NewFaaS().
