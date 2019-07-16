@@ -30,10 +30,16 @@ type Register interface {
 }
 
 // NewRegister creates a new Register
-func NewRegister() Register {
-	return &register{
+func NewRegister(items ...interface{}) Register {
+	reg := &register{
 		types: make(map[string]reflect.Type),
 	}
+
+	for _, item := range items {
+		reg.Set(item)
+	}
+
+	return reg
 }
 
 type register struct {
