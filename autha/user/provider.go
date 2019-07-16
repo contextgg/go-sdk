@@ -4,12 +4,15 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/google/uuid"
+
 	"github.com/contextgg/go-sdk/autha"
 	"github.com/contextgg/go-sdk/httpbuilder"
 )
 
 type provider struct {
 	functionName string
+	namespace    uuid.UUID
 	username     string
 	password     string
 }
@@ -18,11 +21,25 @@ type provider struct {
 func (p *provider) Login(m *autha.UserLogin) (*autha.IdentityID, error) {
 	var result autha.IdentityID
 
+	aggregateID := uuid.NewSHA1(
+			uuid.NewSHA1(p.namespace, []byte(m.Connection)), []byte(m.Identity.ID)
+		).
+		String()
+
+	// Inject an aggregate id.
+	raw := struct {
+		*autha.UserLogin
+		AggregateID string
+	}{
+		m,
+		aggregateID,
+	}
+
 	status, err := httpbuilder.NewFaaS().
 		SetAuthBasic(p.username, p.password).
 		SetFunction(p.functionName).
 		SetMethod(http.MethodPost).
-		SetBody(m).
+		SetBody(&raw).
 		SetOut(&result).
 		Do()
 
@@ -36,9 +53,12 @@ func (p *provider) Login(m *autha.UserLogin) (*autha.IdentityID, error) {
 }
 
 // NewProvider creates a new user provider
-func NewProvider(functionName, username, password string) autha.UserProvider {
+func NewProvider(functionName, authDNS, username, password string) autha.UserProvider {
+	base := uuid.NewSHA1(uuid.NameSpaceURL, []byte(authDNS))
+
 	return &provider{
 		functionName: functionName,
+		namespace:    base,
 		username:     username,
 		password:     password,
 	}
