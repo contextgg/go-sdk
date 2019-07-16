@@ -6,4 +6,5 @@ import "net/http"
 type UserStore interface {
 	// Save the user to the request
 	Save(*IdentityID, http.ResponseWriter, *http.Request) error
+	Load(*http.Request) (*IdentityID, bool, error)
 }

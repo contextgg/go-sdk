@@ -28,8 +28,36 @@ func (s *userStore) Save(identityID *autha.IdentityID, w http.ResponseWriter, r 
 	}
 
 	sess.Values["id"] = identityID.ID
+	sess.Values["version"] = identityID.Version
 
 	return sess.Save(r, w)
+}
+
+func (s *userStore) Load(r *http.Request) (*autha.IdentityID, bool, error) {
+	// load up the session
+	sess, err := s.cookieStore.Get(r, userStoreKey)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if sess.IsNew {
+		return nil, false, nil
+	}
+
+	// try convert it!
+	id, ok := sess.Values["id"].(string)
+	if !ok {
+		return nil, false, errors.New("No ID found in session")
+	}
+	version, ok := sess.Values["version"].(int)
+	if !ok {
+		return nil, false, errors.New("No Version found in session")
+	}
+
+	return &autha.IdentityID{
+		ID:      id,
+		Version: version,
+	}, true, nil
 }
 
 // NewUserStore creates a new session store
