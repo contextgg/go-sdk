@@ -11,7 +11,7 @@ import (
 	"github.com/contextgg/go-sdk/httpbuilder"
 )
 
-const headerName = "_ctx_type_name_"
+const queryName = "type_name"
 
 type provider struct {
 	functionName string
@@ -40,7 +40,7 @@ func (p *provider) Login(ctx context.Context, m *autha.UserLogin) (*autha.Identi
 		SetFunction(p.functionName).
 		SetMethod(http.MethodPost).
 		SetBody(&raw).
-		AddHeader(headerName, "Login").
+		AddQuery(queryName, "Login").
 		Do(ctx)
 
 	if err != nil {

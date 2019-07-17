@@ -34,6 +34,9 @@ type FaaSHTTPBuilder interface {
 	// AddHeader to the request
 	AddHeader(string, string) FaaSHTTPBuilder
 
+	// AddQuery to the request
+	AddQuery(string, string) FaaSHTTPBuilder
+
 	// SetOut is the output of the invoke
 	SetOut(interface{}) FaaSHTTPBuilder
 
@@ -86,6 +89,11 @@ func (b *faasHTTPBuilder) SetBody(body interface{}) FaaSHTTPBuilder {
 
 func (b *faasHTTPBuilder) AddHeader(key, value string) FaaSHTTPBuilder {
 	b.builder.AddHeader(key, value)
+	return b
+}
+
+func (b *faasHTTPBuilder) AddQuery(key, value string) FaaSHTTPBuilder {
+	b.builder.AddQuery(key, value)
 	return b
 }
 
