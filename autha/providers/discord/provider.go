@@ -125,12 +125,19 @@ func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session 
 		return nil, fmt.Errorf("Invalid Status Code %d", status)
 	}
 
+	avatarURL := ""
+	if user.Avatar != nil {
+		avatarURL = fmt.Sprintf("https://cdn.discordapp.com/avatars/%s/%s.jpg?size=512", user.ID, *user.Avatar)
+	}
+
 	id := &autha.Identity{
-		Provider: p.Name(),
-		ID:       user.ID,
-		Username: fmt.Sprintf("%s#%s", user.Username, user.Discriminator),
-		Email:    user.Email,
-		Profile:  user,
+		Provider:    p.Name(),
+		ID:          user.ID,
+		Username:    fmt.Sprintf("%s#%s", user.Username, user.Discriminator),
+		Email:       user.Email,
+		DisplayName: user.Username,
+		AvatarURL:   avatarURL,
+		Profile:     user,
 	}
 	return id, nil
 }

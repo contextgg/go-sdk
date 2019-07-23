@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/contextgg/go-sdk/gen"
 	"github.com/contextgg/go-sdk/httpbuilder"
@@ -97,10 +98,18 @@ func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session 
 		return nil, fmt.Errorf("Invalid Status Code %d", status)
 	}
 
+	displayName := ""
+	splits := strings.Split(user.Battletag, "#")
+	if len(splits) > 0 {
+		displayName = splits[0]
+	}
+
 	id := &autha.Identity{
-		Provider: p.Name(),
-		ID:       fmt.Sprintf("%d", user.ID),
-		Profile:  user,
+		Provider:    p.Name(),
+		ID:          fmt.Sprintf("%d", user.ID),
+		Username:    user.Battletag,
+		DisplayName: displayName,
+		Profile:     user,
 	}
 	return id, nil
 }

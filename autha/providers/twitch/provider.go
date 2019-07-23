@@ -142,11 +142,13 @@ func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session 
 	}
 
 	id := &autha.Identity{
-		Provider: p.Name(),
-		ID:       user.ID,
-		Username: user.Name,
-		Email:    user.Email,
-		Profile:  user,
+		Provider:    p.Name(),
+		ID:          user.ID,
+		Username:    user.Name,
+		Email:       user.Email,
+		DisplayName: user.DisplayName,
+		AvatarURL:   user.Logo,
+		Profile:     user,
 	}
 	return id, nil
 }

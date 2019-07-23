@@ -4,11 +4,13 @@ import "context"
 
 // Identity represents the identity of a discord user
 type Identity struct {
-	Provider string      `json:"provider"`
-	ID       string      `json:"id"`
-	Username string      `json:"username"`
-	Email    string      `json:"email"`
-	Profile  interface{} `json:"profile,omitempty"`
+	Provider    string      `json:"provider"`
+	ID          string      `json:"id"`
+	Username    string      `json:"username,omitempty"`
+	Email       string      `json:"email,omitempty"`
+	DisplayName string      `json:"display_name,omitempty"`
+	AvatarURL   string      `json:"avatar_url,omitempty"`
+	Profile     interface{} `json:"profile,omitempty"`
 }
 
 // AuthProvider is the common interface for doing auth
