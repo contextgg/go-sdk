@@ -231,20 +231,19 @@ func (b *httpBuilder) Do(ctx context.Context) (int, error) {
 
 	// If we have an output decode it
 	if b.out != nil {
-		bodyBytes, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			return res.StatusCode, err
-		}
-
-		body := string(bodyBytes)
-		b.logger(body)
-
 		switch out := b.out.(type) {
+		case io.Writer:
+			_, err := io.Copy(out, res.Body)
+			return res.StatusCode, err
 		case *string:
-			*out = body
+			bodyBytes, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				return res.StatusCode, err
+			}
+			*out = string(bodyBytes)
 			return res.StatusCode, nil
 		default:
-			return res.StatusCode, json.Unmarshal(bodyBytes, b.out)
+			return res.StatusCode, json.NewDecoder(res.Body).Decode(b.out)
 		}
 	}
 
