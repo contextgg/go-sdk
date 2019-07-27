@@ -181,13 +181,13 @@ func (b *httpBuilder) Do(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	// Add headers
-	for key, val := range b.headers {
-		req.Header.Add(key, val)
-	}
-	// Add headers
+	// set local headers first so the user can override them
 	for key, val := range headers {
-		req.Header.Add(key, val)
+		req.Header.Set(key, val)
+	}
+	// Set headers
+	for key, val := range b.headers {
+		req.Header.Set(key, val)
 	}
 
 	query := req.URL.Query()
