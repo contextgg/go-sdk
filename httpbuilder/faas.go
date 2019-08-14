@@ -1,6 +1,7 @@
 package httpbuilder
 
 import (
+	"context"
 	"os"
 	"strings"
 
@@ -15,6 +16,12 @@ type FaaSHTTPBuilder interface {
 	// SetMethod the method used to invoke
 	SetMethod(string) FaaSHTTPBuilder
 
+	// SetAuthBasic basic auth for the request
+	SetAuthBasic(string, string) FaaSHTTPBuilder
+
+	// SetAuthPrefix load up basic auth from ENV
+	SetAuthPrefix(string) FaaSHTTPBuilder
+
 	// SetAsync will enable an async function call
 	SetAsync() FaaSHTTPBuilder
 
@@ -24,11 +31,17 @@ type FaaSHTTPBuilder interface {
 	// SetBody is the content for the invoke
 	SetBody(interface{}) FaaSHTTPBuilder
 
+	// AddHeader to the request
+	AddHeader(string, string) FaaSHTTPBuilder
+
+	// AddQuery to the request
+	AddQuery(string, string) FaaSHTTPBuilder
+
 	// SetOut is the output of the invoke
 	SetOut(interface{}) FaaSHTTPBuilder
 
 	// Do the HTTP Request
-	Do() (int, error)
+	Do(context.Context) (int, error)
 }
 
 type faasHTTPBuilder struct {
@@ -49,6 +62,16 @@ func (b *faasHTTPBuilder) SetMethod(method string) FaaSHTTPBuilder {
 	return b
 }
 
+func (b *faasHTTPBuilder) SetAuthBasic(username, password string) FaaSHTTPBuilder {
+	b.builder.SetAuthBasic(username, password)
+	return b
+}
+
+func (b *faasHTTPBuilder) SetAuthPrefix(prefix string) FaaSHTTPBuilder {
+	b.authPrefix = prefix
+	return b
+}
+
 func (b *faasHTTPBuilder) SetAsync() FaaSHTTPBuilder {
 	b.isAsync = true
 	return b
@@ -64,12 +87,22 @@ func (b *faasHTTPBuilder) SetBody(body interface{}) FaaSHTTPBuilder {
 	return b
 }
 
+func (b *faasHTTPBuilder) AddHeader(key, value string) FaaSHTTPBuilder {
+	b.builder.AddHeader(key, value)
+	return b
+}
+
+func (b *faasHTTPBuilder) AddQuery(key, value string) FaaSHTTPBuilder {
+	b.builder.AddQuery(key, value)
+	return b
+}
+
 func (b *faasHTTPBuilder) SetOut(result interface{}) FaaSHTTPBuilder {
 	b.builder.SetOut(result)
 	return b
 }
 
-func (b *faasHTTPBuilder) Do() (int, error) {
+func (b *faasHTTPBuilder) Do(ctx context.Context) (int, error) {
 	// build the url!.
 	gateway := os.Getenv("gateway_url")
 	if gateway == "" {
@@ -89,7 +122,7 @@ func (b *faasHTTPBuilder) Do() (int, error) {
 		b.builder.SetAuthBasic(creds.Username, creds.Password)
 	}
 
-	return b.builder.Do()
+	return b.builder.Do(ctx)
 }
 
 // NewFaaS will create a new FaaS HTTP Builder
@@ -97,7 +130,6 @@ func NewFaaS() FaaSHTTPBuilder {
 	builder := New()
 
 	return &faasHTTPBuilder{
-		builder:    builder,
-		authPrefix: "fn",
+		builder: builder,
 	}
 }

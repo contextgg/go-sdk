@@ -1,6 +1,7 @@
 package httpbuilder
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"testing"
@@ -18,6 +19,8 @@ func TestGetDiscordUser(t *testing.T) {
 	const url = `https://discordapp.com/api/users/@me`
 	var botToken = os.Getenv("DISCORD_BOT_TOKEN")
 
+	ctx := context.Background()
+
 	var result DiscordUser
 	builder := New().
 		SetURL(url).
@@ -25,7 +28,7 @@ func TestGetDiscordUser(t *testing.T) {
 		SetAuthToken("Bot", botToken).
 		SetLogger(t.Logf)
 
-	status, err := builder.Do()
+	status, err := builder.Do(ctx)
 	if err != nil {
 		t.Error(err)
 	}

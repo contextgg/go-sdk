@@ -2,14 +2,18 @@ package httpbuilder
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
+
+	"github.com/opentracing/opentracing-go"
 )
 
 // DefaultHTTPClient use a global client to get caching benefits
@@ -19,6 +23,9 @@ var DefaultHTTPClient = &http.Client{
 
 // HTTPBuilder used to build a fluent interface for http requests
 type HTTPBuilder interface {
+	// SetClient will set the underlying client
+	SetClient(client *http.Client) HTTPBuilder
+
 	// SetURL will change the current URL for the query
 	SetURL(string) HTTPBuilder
 
@@ -27,6 +34,15 @@ type HTTPBuilder interface {
 
 	// SetBody is the input of the command
 	SetBody(interface{}) HTTPBuilder
+
+	// AppendPath will append the the URL set
+	AppendPath(string) HTTPBuilder
+
+	// AddHeader to the request
+	AddHeader(string, string) HTTPBuilder
+
+	// AddQuery to the request
+	AddQuery(string, string) HTTPBuilder
 
 	// SetOut is the output of the command
 	SetOut(interface{}) HTTPBuilder
@@ -44,19 +60,26 @@ type HTTPBuilder interface {
 	SetLogger(func(string, ...interface{})) HTTPBuilder
 
 	// Do the HTTP Request
-	Do() (int, error)
+	Do(context.Context) (int, error)
 }
 
 type httpBuilder struct {
-	client    *http.Client
-	url       string
-	method    string
-	authType  string
-	authToken string
-	headers   map[string]string
-	body      interface{}
-	logger    func(string, ...interface{})
-	out       interface{}
+	client     *http.Client
+	url        string
+	appendPath string
+	method     string
+	authType   string
+	authToken  string
+	headers    map[string]string
+	queries    map[string]string
+	body       interface{}
+	logger     func(string, ...interface{})
+	out        interface{}
+}
+
+func (b *httpBuilder) SetClient(client *http.Client) HTTPBuilder {
+	b.client = client
+	return b
 }
 
 func (b *httpBuilder) SetURL(url string) HTTPBuilder {
@@ -66,6 +89,16 @@ func (b *httpBuilder) SetURL(url string) HTTPBuilder {
 
 func (b *httpBuilder) SetMethod(method string) HTTPBuilder {
 	b.method = method
+	return b
+}
+
+func (b *httpBuilder) AddHeader(key, value string) HTTPBuilder {
+	b.headers[key] = value
+	return b
+}
+
+func (b *httpBuilder) AddQuery(key, value string) HTTPBuilder {
+	b.queries[key] = value
 	return b
 }
 
@@ -105,8 +138,13 @@ func (b *httpBuilder) SetBody(body interface{}) HTTPBuilder {
 	return b
 }
 
+func (b *httpBuilder) AppendPath(path string) HTTPBuilder {
+	b.appendPath = path
+	return b
+}
+
 // Do the query
-func (b *httpBuilder) Do() (int, error) {
+func (b *httpBuilder) Do(ctx context.Context) (int, error) {
 	var headers = make(map[string]string)
 
 	var body io.Reader
@@ -120,6 +158,10 @@ func (b *httpBuilder) Do() (int, error) {
 			body = strings.NewReader(raw)
 			headers["Content-Type"] = "text/plain"
 			headers["Accept"] = "text/plain"
+		case url.Values:
+			body = strings.NewReader(raw.Encode())
+			headers["Content-Type"] = "application/x-www-form-urlencoded"
+			headers["Accept"] = "text/plain"
 		default:
 			input, _ := json.Marshal(raw)
 			body = bytes.NewReader(input)
@@ -128,25 +170,53 @@ func (b *httpBuilder) Do() (int, error) {
 		}
 	}
 
-	b.logger("Method %s, URL %s", b.method, b.url)
-	req, err := http.NewRequest(b.method, b.url, body)
+	fullPath := b.url
+	if len(b.appendPath) > 0 {
+		fullPath = strings.TrimSuffix(b.url, "/") + "/" + strings.TrimPrefix(b.appendPath, "/")
+	}
+
+	b.logger("Method %s, URL %s", b.method, fullPath)
+	req, err := http.NewRequest(b.method, fullPath, body)
 	if err != nil {
 		return 0, err
 	}
 
-	// Add headers
-	for key, val := range b.headers {
-		req.Header.Add(key, val)
-	}
-	// Add headers
+	// set local headers first so the user can override them
 	for key, val := range headers {
-		req.Header.Add(key, val)
+		req.Header.Set(key, val)
 	}
+	// Set headers
+	for key, val := range b.headers {
+		req.Header.Set(key, val)
+	}
+
+	query := req.URL.Query()
+	// Add queries
+	for key, val := range b.queries {
+		query.Set(key, val)
+	}
+	req.URL.RawQuery = query.Encode()
 
 	if b.authType != "" {
 		auth := fmt.Sprintf("%s %s", b.authType, b.authToken)
 		req.Header.Set("Authorization", strings.Trim(auth, " "))
 	}
+
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		// Transmit the span's TraceContext as HTTP headers on our
+		// outbound request.
+		opentracing.
+			GlobalTracer().
+			Inject(
+				span.Context(),
+				opentracing.HTTPHeaders,
+				opentracing.HTTPHeadersCarrier(req.Header),
+			)
+	}
+
+	// if c := coherence.FromContext(ctx); c != nil {
+	// 	c.Inject(req.Header)
+	// }
 
 	res, err := b.client.Do(req)
 	if err != nil {
@@ -161,20 +231,19 @@ func (b *httpBuilder) Do() (int, error) {
 
 	// If we have an output decode it
 	if b.out != nil {
-		bodyBytes, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			return res.StatusCode, err
-		}
-
-		body := string(bodyBytes)
-		b.logger(body)
-
 		switch out := b.out.(type) {
+		case io.Writer:
+			_, err := io.Copy(out, res.Body)
+			return res.StatusCode, err
 		case *string:
-			*out = body
+			bodyBytes, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				return res.StatusCode, err
+			}
+			*out = string(bodyBytes)
 			return res.StatusCode, nil
 		default:
-			return res.StatusCode, json.Unmarshal(bodyBytes, b.out)
+			return res.StatusCode, json.NewDecoder(res.Body).Decode(b.out)
 		}
 	}
 
@@ -187,6 +256,7 @@ func New() HTTPBuilder {
 		client:  DefaultHTTPClient,
 		method:  http.MethodGet,
 		headers: make(map[string]string),
+		queries: make(map[string]string),
 		logger:  func(string, ...interface{}) {},
 	}
 }
