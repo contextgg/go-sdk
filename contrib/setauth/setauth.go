@@ -11,7 +11,7 @@ type CommandAuth interface {
 
 // BaseAuthCommand to populate a command with some auth stuff
 type BaseAuthCommand struct {
-	Introspect *hydra.Introspect `json:"introspect" validate:"required"`
+	Introspect *hydra.Introspect `json:"-" validate:"required"`
 }
 
 // SetAuth will populate the object with the auth
