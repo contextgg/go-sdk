@@ -60,6 +60,10 @@ func AuthHandler(hydraURL string) func(http.Handler) http.Handler {
 			authorization := r.Header.Get("Authorization")
 
 			intro, err := load(ctx, hydraURL, authorization)
+			if err == ErrNoAuth {
+				http.Error(w, "", http.StatusUnauthorized)
+				return
+			}
 			if err != nil {
 				http.Error(w, "", http.StatusForbidden)
 				return
