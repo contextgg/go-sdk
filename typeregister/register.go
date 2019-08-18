@@ -61,10 +61,11 @@ func (e *register) Get(name string) (interface{}, error) {
 	e.RLock()
 	defer e.RUnlock()
 
-	rawType, ok := e.types[name]
-	if !ok {
-		return nil, fmt.Errorf("Cannot find %s in registry", name)
+	for key, value := range e.types {
+		if strings.EqualFold(name, key) {
+			return reflect.New(value).Interface(), nil
+		}
 	}
 
-	return reflect.New(rawType).Interface(), nil
+	return nil, fmt.Errorf("Cannot find %s in registry", name)
 }
