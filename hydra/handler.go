@@ -75,3 +75,21 @@ func AuthHandler(hydraURL string) func(http.Handler) http.Handler {
 		})
 	}
 }
+
+// AuthHandlerOptional will load up a user by a token
+func AuthHandlerOptional(hydraURL string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			authorization := r.Header.Get("Authorization")
+
+			intro, err := load(ctx, hydraURL, authorization)
+			if err == nil && intro != nil {
+				// add the intro into the context.
+				ctx = context.WithValue(ctx, authKey, intro)
+			}
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
