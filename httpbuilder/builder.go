@@ -18,7 +18,7 @@ import (
 
 // DefaultHTTPClient use a global client to get caching benefits
 var DefaultHTTPClient = &http.Client{
-	Timeout: 5 * time.Second,
+	Timeout: 15 * time.Second,
 }
 
 // HTTPBuilder used to build a fluent interface for http requests
