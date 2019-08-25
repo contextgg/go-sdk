@@ -47,6 +47,9 @@ type HTTPBuilder interface {
 	// SetOut is the output of the command
 	SetOut(interface{}) HTTPBuilder
 
+	// SetErrorString so we can see the body of a bad response
+	SetErrorString(*string) HTTPBuilder
+
 	// SetBearerToken will set the Authorization header with a bearer token
 	SetBearerToken(string) HTTPBuilder
 
@@ -64,17 +67,18 @@ type HTTPBuilder interface {
 }
 
 type httpBuilder struct {
-	client     *http.Client
-	url        string
-	appendPath string
-	method     string
-	authType   string
-	authToken  string
-	headers    map[string]string
-	queries    map[string]string
-	body       interface{}
-	logger     func(string, ...interface{})
-	out        interface{}
+	client      *http.Client
+	url         string
+	appendPath  string
+	method      string
+	authType    string
+	authToken   string
+	headers     map[string]string
+	queries     map[string]string
+	body        interface{}
+	logger      func(string, ...interface{})
+	out         interface{}
+	errorString *string
 }
 
 func (b *httpBuilder) SetClient(client *http.Client) HTTPBuilder {
@@ -135,6 +139,11 @@ func (b *httpBuilder) SetLogger(logger func(string, ...interface{})) HTTPBuilder
 
 func (b *httpBuilder) SetBody(body interface{}) HTTPBuilder {
 	b.body = body
+	return b
+}
+
+func (b *httpBuilder) SetErrorString(body *string) HTTPBuilder {
+	b.errorString = body
 	return b
 }
 
@@ -223,6 +232,18 @@ func (b *httpBuilder) Do(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode >= 400 {
+		if b.errorString != nil {
+			// get the body!.
+			bodyBytes, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				return res.StatusCode, err
+			}
+			*b.errorString = string(bodyBytes)
+		}
+		return res.StatusCode, nil
+	}
 
 	// check the status code
 	if res.StatusCode < 200 || res.StatusCode > 299 {

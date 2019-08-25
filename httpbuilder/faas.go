@@ -40,6 +40,9 @@ type FaaSHTTPBuilder interface {
 	// SetOut is the output of the invoke
 	SetOut(interface{}) FaaSHTTPBuilder
 
+	// SetOut is the output of the invoke
+	SetErrorString(*string) FaaSHTTPBuilder
+
 	// Do the HTTP Request
 	Do(context.Context) (int, error)
 }
@@ -99,6 +102,11 @@ func (b *faasHTTPBuilder) AddQuery(key, value string) FaaSHTTPBuilder {
 
 func (b *faasHTTPBuilder) SetOut(result interface{}) FaaSHTTPBuilder {
 	b.builder.SetOut(result)
+	return b
+}
+
+func (b *faasHTTPBuilder) SetErrorString(body *string) FaaSHTTPBuilder {
+	b.builder.SetErrorString(body)
 	return b
 }
 
