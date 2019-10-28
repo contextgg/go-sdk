@@ -29,7 +29,7 @@ func (p *provider) Login(ctx context.Context, m *autha.UserLogin) (*autha.Identi
 	// Inject an aggregate id.
 	raw := struct {
 		*autha.UserLogin
-		AggregateID string
+		AggregateID string `json:"aggregate_id"`
 	}{
 		m,
 		id,
