@@ -61,8 +61,8 @@ type Webhook struct {
 	ID        string            `json:"id"`
 	Token     string            `json:"token"`
 	Name      string            `json:"name,omitempty"`
-	ChannelID string            `json:"channel_id"`
-	GuildID   string            `json:"guild_id"`
+	ChannelID string            `json:"channel_id" mapstructure:"channel_id"`
+	GuildID   string            `json:"guild_id" mapstructure:"guild_id"`
 	Avatar    string            `json:"avatar,omitempty"`
 	Type      *int              `json:"type,omitempty"`
 	URL       string            `json:"url,omitempty"`
@@ -110,7 +110,7 @@ func convertToken(tk *oauth2.Token) *Token {
 	wh := tk.Extra("webhook")
 	if wh != nil {
 		var result Webhook
-		if err := mapstructure.Decode(wh, &result); err != nil {
+		if err := mapstructure.Decode(wh, &result); err == nil {
 			t.Webhook = &result
 		}
 	}
