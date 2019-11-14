@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/contextgg/go-sdk/gen"
 	"github.com/contextgg/go-sdk/httpbuilder"
@@ -54,12 +55,55 @@ type CurrentUser struct {
 	PremiumType   int     `json:"premium_type"`
 }
 
+// Token struct
+type Token struct {
+	// AccessToken is the token that authorizes and authenticates
+	// the requests.
+	AccessToken string `json:"access_token"`
+
+	// TokenType is the type of token.
+	// The Type method returns either this or "Bearer", the default.
+	TokenType string `json:"token_type,omitempty"`
+
+	// RefreshToken is a token that's used by the application
+	// (as opposed to the user) to refresh the access token
+	// if it expires.
+	RefreshToken string `json:"refresh_token,omitempty"`
+
+	// Expiry is the optional expiration time of the access token.
+	//
+	// If zero, TokenSource implementations will reuse the same
+	// token forever and RefreshToken or equivalent
+	// mechanisms for that TokenSource will not be used.
+	Expiry time.Time `json:"expiry,omitempty"`
+
+	// Webhook extra information
+	Webhook interface{} `json:"webhook,omitempty"`
+}
+
+func convertToken(tk *oauth2.Token) *Token {
+	if tk == nil {
+		return nil
+	}
+
+	webhook := tk.Extra("webhook")
+
+	return &Token{
+		AccessToken:  tk.AccessToken,
+		TokenType:    tk.TokenType,
+		RefreshToken: tk.RefreshToken,
+		Expiry:       tk.Expiry,
+		Webhook:      webhook,
+	}
+}
+
 type provider struct {
 	config *oauth2.Config
+	name   string
 }
 
 func (p *provider) Name() string {
-	return "discord"
+	return p.name
 }
 
 func (p *provider) BeginAuth(ctx context.Context, session autha.Session) (string, error) {
@@ -97,9 +141,8 @@ func (p *provider) Authorize(ctx context.Context, session autha.Session, params 
 		return nil, errors.New("Invalid token received from provider")
 	}
 
-	// TODO what to do with the token.
-
-	return token, nil
+	// convert to a discord token!
+	return convertToken(token), nil
 }
 
 func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session autha.Session) (*autha.Identity, error) {
@@ -143,8 +186,9 @@ func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session 
 }
 
 // NewProvider creates a new Provider
-func NewProvider(clientID, clientSecret, callbackURL string, scopes ...string) autha.AuthProvider {
+func NewProvider(name, clientID, clientSecret, callbackURL string, scopes ...string) autha.AuthProvider {
 	return &provider{
+		name:   name,
 		config: newConfig(clientID, clientSecret, callbackURL, scopes),
 	}
 }
