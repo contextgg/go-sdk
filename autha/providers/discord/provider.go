@@ -167,7 +167,7 @@ func (p *provider) Authorize(ctx context.Context, session autha.Session, params 
 }
 
 func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session autha.Session) (*autha.Identity, error) {
-	t, ok := token.(*oauth2.Token)
+	t, ok := token.(*Token)
 	if !ok {
 		return nil, errors.New("Wrong token type")
 	}
