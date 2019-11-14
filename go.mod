@@ -9,6 +9,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/sessions v1.1.3
 	github.com/leodido/go-urn v1.1.0 // indirect
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/mrjones/oauth v0.0.0-20190623134757-126b35219450
 	github.com/opentracing/opentracing-go v1.1.0
 	golang.org/x/net v0.0.0-20190613194153-d28f0bde5980 // indirect

@@ -10,6 +10,7 @@ import (
 	"github.com/contextgg/go-sdk/gen"
 	"github.com/contextgg/go-sdk/httpbuilder"
 
+	"github.com/mitchellh/mapstructure"
 	"golang.org/x/oauth2"
 
 	"github.com/contextgg/go-sdk/autha"
@@ -55,6 +56,19 @@ type CurrentUser struct {
 	PremiumType   int     `json:"premium_type"`
 }
 
+// Webhook struct
+type Webhook struct {
+	ID        string            `json:"id"`
+	Token     string            `json:"token"`
+	Name      string            `json:"name,omitempty"`
+	ChannelID string            `json:"channel_id"`
+	GuildID   string            `json:"guild_id"`
+	Avatar    string            `json:"avatar,omitempty"`
+	Type      *int              `json:"type,omitempty"`
+	URL       string            `json:"url,omitempty"`
+	Extra     map[string]string `json:"extra,omitempty"`
+}
+
 // Token struct
 type Token struct {
 	// AccessToken is the token that authorizes and authenticates
@@ -78,7 +92,7 @@ type Token struct {
 	Expiry time.Time `json:"expiry,omitempty"`
 
 	// Webhook extra information
-	Webhook interface{} `json:"webhook,omitempty"`
+	Webhook *Webhook `json:"webhook,omitempty"`
 }
 
 func convertToken(tk *oauth2.Token) *Token {
@@ -86,15 +100,22 @@ func convertToken(tk *oauth2.Token) *Token {
 		return nil
 	}
 
-	webhook := tk.Extra("webhook")
-
-	return &Token{
+	t := &Token{
 		AccessToken:  tk.AccessToken,
 		TokenType:    tk.TokenType,
 		RefreshToken: tk.RefreshToken,
 		Expiry:       tk.Expiry,
-		Webhook:      webhook,
 	}
+
+	wh := tk.Extra("webhook")
+	if wh != nil {
+		var result Webhook
+		if err := mapstructure.Decode(wh, &result); err != nil {
+			t.Webhook = &result
+		}
+	}
+
+	return t
 }
 
 type provider struct {
