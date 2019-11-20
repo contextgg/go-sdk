@@ -17,10 +17,10 @@ type Config struct {
 	connection   string
 	loginURL     string
 	errorURL     string
-	authProvider AuthProvider
 	sessionStore SessionStore
-	userProvider UserProvider
 	userStore    UserStore
+	authProvider AuthProvider
+	userService  UserService
 }
 
 // NewConfig will return a new config
@@ -28,18 +28,19 @@ func NewConfig(
 	connection string,
 	loginURL string,
 	errorURL string,
-	authProvider AuthProvider,
 	sessionStore SessionStore,
-	userProvider UserProvider,
-	userStore UserStore) *Config {
+	userStore UserStore,
+	authProvider AuthProvider,
+	userService UserService,
+) *Config {
 	return &Config{
 		connection:   connection,
 		loginURL:     loginURL,
 		errorURL:     errorURL,
-		authProvider: authProvider,
 		sessionStore: sessionStore,
-		userProvider: userProvider,
 		userStore:    userStore,
+		authProvider: authProvider,
+		userService:  userService,
 	}
 }
 
@@ -66,21 +67,21 @@ func (c *Config) Begin(w http.ResponseWriter, r *http.Request) {
 	session, err := c.sessionStore.Load(c.connection, r)
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
-		log.Print(fmt.Errorf("Error Session Load: %s", err.Error()))
+		log.Print(fmt.Errorf("Error Session Load: %w", err))
 		return
 	}
 
-	url, err := c.authProvider.BeginAuth(ctx, session)
+	url, err := c.authProvider.BeginAuth(ctx, session, r.URL.Query())
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("auth"), http.StatusFound)
-		log.Print(fmt.Errorf("Error Begin Auth: %s", err.Error()))
+		log.Print(fmt.Errorf("Error Begin Auth: %w", err))
 		return
 	}
 
 	// save the session
 	if err := c.sessionStore.Save(session, w, r); err != nil {
 		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
-		log.Print(fmt.Errorf("Error Session Save: %s", err.Error()))
+		log.Print(fmt.Errorf("Error Session Save: %w", err))
 		return
 	}
 
@@ -94,44 +95,69 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	session, err := c.sessionStore.Load(c.connection, r)
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
-		log.Print(fmt.Errorf("Error Session Load: %s", err.Error()))
+		log.Print(fmt.Errorf("Error Session Load: %w", err))
 		return
 	}
 
 	token, err := c.authProvider.Authorize(ctx, session, r.URL.Query())
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("id"), http.StatusFound)
-		log.Print(fmt.Errorf("Error Authorize: %s", err.Error()))
+		log.Print(fmt.Errorf("Error Authorize: %w", err))
 		return
 	}
 
-	identity, err := c.authProvider.LoadIdentity(ctx, token, session)
+	profile, err := c.authProvider.LoadProfile(ctx, token, session)
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("identity"), http.StatusFound)
-		log.Print(fmt.Errorf("Error Load Identity: %s", err.Error()))
+		log.Print(fmt.Errorf("Error Load Identity: %w", err))
 		return
 	}
 
-	// TODO what about if we are linking?
+	currentUserID, isConnected, err := c.userStore.Load(r)
+	if err != nil {
+		http.Redirect(w, r, c.fullErrorURL("identity"), http.StatusFound)
+		log.Print(fmt.Errorf("Error loading current user id: %w", err))
+		return
+	}
 
+	// if we are linking we need to tell the user this is a secondary account!
+
+	pu := NewPersistUser(
+		c.authProvider.Name(),
+		c.connection,
+		token,
+		profile,
+		currentUserID,
+		isConnected,
+	)
 	// if we have an id store it!
-	id, err := c.userProvider.Login(r.Context(), NewUserLogin(c.connection, identity, token))
+	id, err := c.userService.Persist(r.Context(), pu)
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("user"), http.StatusFound)
-		log.Print(fmt.Errorf("Error Login: %s", err.Error()))
+		log.Print(fmt.Errorf("Error Login: %w", err))
 		return
 	}
 
-	if err := c.userStore.Save(id, w, r); err != nil {
-		http.Redirect(w, r, c.fullErrorURL("id"), http.StatusFound)
-		log.Print(fmt.Errorf("Error IdentityID Save: %s", err.Error()))
-		return
+	if isConnected {
+		// we need to connect the accounts.
+		if err := c.userService.Connect(r.Context(), currentUserID, pu); err != nil {
+			http.Redirect(w, r, c.fullErrorURL("user"), http.StatusFound)
+			log.Print(fmt.Errorf("Error connecting profiles: %w", err))
+			return
+		}
+	} else {
+		// this is to auth the user!
+		if err := c.userStore.Save(id, w, r); err != nil {
+			http.Redirect(w, r, c.fullErrorURL("id"), http.StatusFound)
+			log.Print(fmt.Errorf("Error Profile Store Save: %w", err))
+			return
+		}
 	}
 
 	// save the session
 	if err := c.sessionStore.Save(session, w, r); err != nil {
 		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
-		log.Print(fmt.Errorf("Error Session Save: %s", err.Error()))
+		log.Print(fmt.Errorf("Error Session Save: %w", err))
 		return
 	}
 

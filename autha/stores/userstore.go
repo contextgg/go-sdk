@@ -16,9 +16,9 @@ type userStore struct {
 	cookieStore *sessions.CookieStore
 }
 
-func (s *userStore) Save(identityID *autha.IdentityID, w http.ResponseWriter, r *http.Request) error {
-	if identityID == nil {
-		return errors.New("No identityID provided")
+func (s *userStore) Save(userID *autha.UserID, w http.ResponseWriter, r *http.Request) error {
+	if userID == nil {
+		return errors.New("No userID provided")
 	}
 
 	// load up the session
@@ -27,12 +27,12 @@ func (s *userStore) Save(identityID *autha.IdentityID, w http.ResponseWriter, r 
 		return err
 	}
 
-	sess.Values["id"] = identityID.ID
+	sess.Values["id"] = userID
 
 	return sess.Save(r, w)
 }
 
-func (s *userStore) Load(r *http.Request) (*autha.IdentityID, bool, error) {
+func (s *userStore) Load(r *http.Request) (*autha.UserID, bool, error) {
 	// load up the session
 	sess, err := s.cookieStore.Get(r, userStoreKey)
 	if err != nil {
@@ -44,14 +44,12 @@ func (s *userStore) Load(r *http.Request) (*autha.IdentityID, bool, error) {
 	}
 
 	// try convert it!
-	id, ok := sess.Values["id"].(string)
+	id, ok := sess.Values["id"].(autha.UserID)
 	if !ok || len(id) < 1 {
 		return nil, false, errors.New("No ID found in session")
 	}
 
-	return &autha.IdentityID{
-		ID: id,
-	}, true, nil
+	return &id, true, nil
 }
 
 // NewUserStore creates a new session store

@@ -78,7 +78,7 @@ func (p *provider) Name() string {
 	return "twitch"
 }
 
-func (p *provider) BeginAuth(ctx context.Context, session autha.Session) (string, error) {
+func (p *provider) BeginAuth(ctx context.Context, session autha.Session, params autha.Params) (string, error) {
 	// state for the oauth grant!
 	state := gen.RandomString(64)
 
@@ -116,7 +116,7 @@ func (p *provider) Authorize(ctx context.Context, session autha.Session, params 
 	return token, nil
 }
 
-func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session autha.Session) (*autha.Identity, error) {
+func (p *provider) LoadProfile(ctx context.Context, token autha.Token, session autha.Session) (*autha.Profile, error) {
 	t, ok := token.(*oauth2.Token)
 	if !ok {
 		return nil, errors.New("Wrong token type")
@@ -141,14 +141,13 @@ func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session 
 		return nil, fmt.Errorf("Invalid Status Code %d", status)
 	}
 
-	id := &autha.Identity{
-		Provider:    p.Name(),
+	id := &autha.Profile{
 		ID:          user.ID,
 		Username:    user.Name,
 		Email:       user.Email,
 		DisplayName: user.DisplayName,
 		AvatarURL:   user.Logo,
-		Profile:     user,
+		Raw:         user,
 	}
 	return id, nil
 }

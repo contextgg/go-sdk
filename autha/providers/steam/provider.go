@@ -54,7 +54,7 @@ func (p *provider) Name() string {
 	return "steam"
 }
 
-func (p *provider) BeginAuth(ctx context.Context, session autha.Session) (string, error) {
+func (p *provider) BeginAuth(ctx context.Context, session autha.Session, params autha.Params) (string, error) {
 	callbackURL, err := url.Parse(p.callbackURL)
 	if err != nil {
 		return "", err
@@ -144,7 +144,7 @@ func (p *provider) Authorize(ctx context.Context, session autha.Session, params 
 	return t, nil
 }
 
-func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session autha.Session) (*autha.Identity, error) {
+func (p *provider) LoadProfile(ctx context.Context, token autha.Token, session autha.Session) (*autha.Profile, error) {
 	stok, ok := token.(*steamToken)
 	if !ok {
 		return nil, errors.New("Invalid token")
@@ -171,13 +171,12 @@ func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session 
 
 	user := users.Response.Players[0]
 
-	id := &autha.Identity{
-		Provider:    p.Name(),
+	id := &autha.Profile{
 		ID:          user.SteamID,
 		Username:    user.PersonaName,
 		DisplayName: user.RealName,
 		AvatarURL:   user.AvatarFull,
-		Profile:     user,
+		Raw:         user,
 	}
 	return id, nil
 }

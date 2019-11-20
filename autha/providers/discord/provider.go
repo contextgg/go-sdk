@@ -120,14 +120,13 @@ func convertToken(tk *oauth2.Token) *Token {
 
 type provider struct {
 	config *oauth2.Config
-	name   string
 }
 
 func (p *provider) Name() string {
-	return p.name
+	return "discord"
 }
 
-func (p *provider) BeginAuth(ctx context.Context, session autha.Session) (string, error) {
+func (p *provider) BeginAuth(ctx context.Context, session autha.Session, params autha.Params) (string, error) {
 	// state for the oauth grant!
 	state := gen.RandomString(64)
 
@@ -166,7 +165,7 @@ func (p *provider) Authorize(ctx context.Context, session autha.Session, params 
 	return convertToken(token), nil
 }
 
-func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session autha.Session) (*autha.Identity, error) {
+func (p *provider) LoadProfile(ctx context.Context, token autha.Token, session autha.Session) (*autha.Profile, error) {
 	t, ok := token.(*Token)
 	if !ok {
 		return nil, errors.New("Wrong token type")
@@ -194,22 +193,20 @@ func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session 
 		avatarURL = fmt.Sprintf("https://cdn.discordapp.com/avatars/%s/%s.jpg?size=512", user.ID, *user.Avatar)
 	}
 
-	id := &autha.Identity{
-		Provider:    p.Name(),
+	id := &autha.Profile{
 		ID:          user.ID,
 		Username:    fmt.Sprintf("%s#%s", user.Username, user.Discriminator),
 		Email:       user.Email,
 		DisplayName: user.Username,
 		AvatarURL:   avatarURL,
-		Profile:     user,
+		Raw:         user,
 	}
 	return id, nil
 }
 
 // NewProvider creates a new Provider
-func NewProvider(name, clientID, clientSecret, callbackURL string, scopes ...string) autha.AuthProvider {
+func NewProvider(clientID, clientSecret, callbackURL string, scopes ...string) autha.AuthProvider {
 	return &provider{
-		name:   name,
 		config: newConfig(clientID, clientSecret, callbackURL, scopes),
 	}
 }

@@ -35,7 +35,7 @@ func (p *provider) Name() string {
 	return "battlenet"
 }
 
-func (p *provider) BeginAuth(ctx context.Context, session autha.Session) (string, error) {
+func (p *provider) BeginAuth(ctx context.Context, session autha.Session, params autha.Params) (string, error) {
 	// state for the oauth grant!
 	state := gen.RandomString(64)
 
@@ -75,7 +75,7 @@ func (p *provider) Authorize(ctx context.Context, session autha.Session, params 
 	return token, nil
 }
 
-func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session autha.Session) (*autha.Identity, error) {
+func (p *provider) LoadProfile(ctx context.Context, token autha.Token, session autha.Session) (*autha.Profile, error) {
 	t, ok := token.(*oauth2.Token)
 	if !ok {
 		return nil, errors.New("Wrong token type")
@@ -104,12 +104,11 @@ func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session 
 		displayName = splits[0]
 	}
 
-	id := &autha.Identity{
-		Provider:    p.Name(),
+	id := &autha.Profile{
 		ID:          fmt.Sprintf("%d", user.ID),
 		Username:    user.Battletag,
 		DisplayName: displayName,
-		Profile:     user,
+		Raw:         user,
 	}
 	return id, nil
 }

@@ -44,7 +44,7 @@ func (p *provider) Name() string {
 	return "twitter"
 }
 
-func (p *provider) BeginAuth(ctx context.Context, session autha.Session) (string, error) {
+func (p *provider) BeginAuth(ctx context.Context, session autha.Session, params autha.Params) (string, error) {
 	reqToken, url, err := p.consumer.GetRequestTokenAndUrl(p.callbackURL)
 	if err != nil {
 		return "", err
@@ -83,7 +83,7 @@ func (p *provider) Authorize(ctx context.Context, session autha.Session, params 
 	return accessToken, err
 }
 
-func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session autha.Session) (*autha.Identity, error) {
+func (p *provider) LoadProfile(ctx context.Context, token autha.Token, session autha.Session) (*autha.Profile, error) {
 	accessToken, ok := token.(*oauth.AccessToken)
 	if !ok {
 		return nil, errors.New("Invalid access token")
@@ -110,14 +110,13 @@ func (p *provider) LoadIdentity(ctx context.Context, token autha.Token, session 
 		return nil, fmt.Errorf("Invalid Status Code %d", status)
 	}
 
-	id := &autha.Identity{
-		Provider:    p.Name(),
+	id := &autha.Profile{
 		ID:          user.ID,
 		Username:    user.ScreenName,
 		Email:       user.Email,
 		DisplayName: user.Name,
 		AvatarURL:   user.ProfileImageURL,
-		Profile:     user,
+		Raw:         user,
 	}
 	return id, nil
 }
