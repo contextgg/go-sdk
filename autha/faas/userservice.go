@@ -34,6 +34,12 @@ func (p *provider) Persist(ctx context.Context, m *autha.PersistUser) (*autha.Us
 	uid := uuid.NewSHA1(ns, []byte(m.Profile.ID))
 	id := uid.String()
 
+	// HACK fix the connected profile if id's are the same!
+	if m.IsConnectedProfile && string(*m.PrimaryUserID) == id {
+		m.IsConnectedProfile = false
+		m.PrimaryUserID = nil
+	}
+
 	raw := Command{
 		m,
 		id,

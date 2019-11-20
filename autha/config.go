@@ -137,7 +137,7 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if isConnected {
+	if isConnected && *currentUserID != *id {
 		cu := NewConnectUser(
 			c.authProvider.Name(),
 			c.connection,
