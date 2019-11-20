@@ -1,4 +1,4 @@
-package fas
+package faas
 
 import (
 	"context"
