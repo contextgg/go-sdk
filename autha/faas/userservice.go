@@ -14,9 +14,16 @@ import (
 
 const queryName = "type_name"
 
-// Command struct
-type Command struct {
+// PersistCommand struct
+type PersistCommand struct {
 	*autha.PersistUser
+
+	AggregateID string `json:"aggregate_id"`
+}
+
+// ConnectCommand struct
+type ConnectCommand struct {
+	*autha.ConnectUser
 
 	AggregateID string `json:"aggregate_id"`
 }
@@ -40,7 +47,7 @@ func (p *provider) Persist(ctx context.Context, m *autha.PersistUser) (*autha.Us
 		m.PrimaryUserID = nil
 	}
 
-	raw := Command{
+	raw := PersistCommand{
 		m,
 		id,
 	}
@@ -65,12 +72,12 @@ func (p *provider) Persist(ctx context.Context, m *autha.PersistUser) (*autha.Us
 }
 
 // connection string, id *autha.Identity, token autha.Token
-func (p *provider) Connect(ctx context.Context, userID *autha.UserID, m *autha.PersistUser) error {
+func (p *provider) Connect(ctx context.Context, userID *autha.UserID, m *autha.ConnectUser) error {
 	if userID == nil {
 		return fmt.Errorf("No userid supplied")
 	}
 
-	raw := Command{
+	raw := ConnectCommand{
 		m,
 		string(*userID),
 	}
