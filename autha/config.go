@@ -121,7 +121,6 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// if we are linking we need to tell the user this is a secondary account!
-
 	pu := NewPersistUser(
 		c.authProvider.Name(),
 		c.connection,
@@ -139,8 +138,14 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if isConnected {
+		cu := NewConnectUser(
+			c.authProvider.Name(),
+			c.connection,
+			token,
+			profile,
+		)
 		// we need to connect the accounts.
-		if err := c.userService.Connect(r.Context(), currentUserID, pu); err != nil {
+		if err := c.userService.Connect(r.Context(), currentUserID, cu); err != nil {
 			http.Redirect(w, r, c.fullErrorURL("user"), http.StatusFound)
 			log.Print(fmt.Errorf("Error connecting profiles: %w", err))
 			return
