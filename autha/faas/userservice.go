@@ -57,7 +57,7 @@ func (p *provider) Persist(ctx context.Context, m *autha.PersistUser) (*autha.Us
 		SetFunction(p.functionName).
 		SetMethod(http.MethodPost).
 		SetBody(&raw).
-		AddQuery(queryName, "Persist").
+		AddQuery(queryName, "PersistUserCommand").
 		Do(ctx)
 
 	if err != nil {
@@ -87,7 +87,7 @@ func (p *provider) Connect(ctx context.Context, userID *autha.UserID, m *autha.C
 		SetFunction(p.functionName).
 		SetMethod(http.MethodPost).
 		SetBody(&raw).
-		AddQuery(queryName, "Connect").
+		AddQuery(queryName, "ConnectUserCommand").
 		Do(ctx)
 
 	if err != nil {
