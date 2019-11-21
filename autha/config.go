@@ -67,7 +67,7 @@ func (c *Config) fullErrorURL(errorType string) string {
 }
 
 // Begin the auth method
-func (c *Config) Begin(w http.ResponseWriter, r *http.Request) {
+func (c *Config) Begin(w http.ResponseWriter, r *http.Request) Session {
 	ctx := r.Context()
 
 	// get the current session!
@@ -75,49 +75,53 @@ func (c *Config) Begin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Session Load: %w", err))
-		return
+		return nil
 	}
 
 	url, err := c.authProvider.BeginAuth(ctx, session, r.URL.Query())
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("auth"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Begin Auth: %w", err))
-		return
+		return nil
 	}
 
 	// save the session
 	if err := c.sessionStore.Save(session, w, r); err != nil {
 		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Session Save: %w", err))
-		return
+		return nil
 	}
 
-	http.Redirect(w, r, url, http.StatusFound)
+	if len(url) > 0 {
+		http.Redirect(w, r, url, http.StatusFound)
+	}
+
+	return session
 }
 
 // Callback for the provider
-func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
+func (c *Config) Callback(w http.ResponseWriter, r *http.Request) Session {
 	ctx := r.Context()
 
 	session, err := c.sessionStore.Load(c.connection, r)
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Session Load: %w", err))
-		return
+		return nil
 	}
 
 	token, err := c.authProvider.Authorize(ctx, session, r.URL.Query())
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("id"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Authorize: %w", err))
-		return
+		return nil
 	}
 
 	profile, err := c.authProvider.LoadProfile(ctx, token, session)
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("identity"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Load Identity: %w", err))
-		return
+		return nil
 	}
 
 	// calcuate the aggregate id!
@@ -133,7 +137,7 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("identity"), http.StatusFound)
 		log.Print(fmt.Errorf("Error loading current user id: %w", err))
-		return
+		return nil
 	}
 
 	if c.debug {
@@ -168,7 +172,7 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	if err := c.userService.Persist(r.Context(), userID, pu); err != nil {
 		http.Redirect(w, r, c.fullErrorURL("user"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Login: %w", err))
-		return
+		return nil
 	}
 
 	id := userID
@@ -190,7 +194,7 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 		if err := c.userService.Connect(r.Context(), id, cu); err != nil {
 			http.Redirect(w, r, c.fullErrorURL("user"), http.StatusFound)
 			log.Print(fmt.Errorf("Error connecting profiles: %w", err))
-			return
+			return nil
 		}
 	}
 
@@ -202,16 +206,21 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	if err := c.userStore.Save(id, w, r); err != nil {
 		http.Redirect(w, r, c.fullErrorURL("id"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Profile Store Save: %w", err))
-		return
+		return nil
 	}
 
 	// save the session
 	if err := c.sessionStore.Save(session, w, r); err != nil {
 		http.Redirect(w, r, c.fullErrorURL("session"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Session Save: %w", err))
-		return
+		return nil
 	}
 
 	// what's the next step?
-	http.Redirect(w, r, c.loginURL, http.StatusFound)
+	if len(c.loginURL) > 0 {
+		http.Redirect(w, r, c.loginURL, http.StatusFound)
+	}
+
+	// return session!
+	return session
 }
