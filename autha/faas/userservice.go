@@ -2,7 +2,6 @@ package faas
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -33,68 +32,76 @@ type provider struct {
 	namespace    uuid.UUID
 	username     string
 	password     string
+
+	debug bool
+}
+
+func (p *provider) SetDebug() {
+	p.debug = true
+}
+
+func (p *provider) CalculateAggregateID(connection, id string) string {
+	ns := uuid.NewSHA1(p.namespace, []byte(connection))
+	uid := uuid.NewSHA1(ns, []byte(id))
+	return uid.String()
 }
 
 // connection string, id *autha.Identity, token autha.Token
-func (p *provider) Persist(ctx context.Context, m *autha.PersistUser) (*autha.UserID, error) {
-	ns := uuid.NewSHA1(p.namespace, []byte(m.Connection))
-	uid := uuid.NewSHA1(ns, []byte(m.Profile.ID))
-	id := uid.String()
-
-	// HACK fix the connected profile if id's are the same!
-	if m.IsConnectedProfile && string(*m.PrimaryUserID) == id {
-		m.IsConnectedProfile = false
-		m.PrimaryUserID = nil
-	}
-
+func (p *provider) Persist(ctx context.Context, aggregateID string, m *autha.PersistUser) error {
 	raw := PersistCommand{
 		m,
-		id,
+		aggregateID,
 	}
 
+	if p.debug {
+		fmt.Printf("Payload: %#v", raw)
+	}
+
+	var errorString string
 	status, err := httpbuilder.NewFaaS().
 		SetAuthBasic(p.username, p.password).
 		SetFunction(p.functionName).
 		SetMethod(http.MethodPost).
 		SetBody(&raw).
+		SetErrorString(&errorString).
 		AddQuery(queryName, "PersistUserCommand").
 		Do(ctx)
 
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("Error with request %w %s", err, errorString)
 	}
-	if status < 200 || status > 400 {
-		return nil, errors.New("Invalid http status")
+	if status < 200 || status > 399 {
+		return fmt.Errorf("Error with status code %d %s", status, errorString)
 	}
 
-	userID := autha.UserID(id)
-	return &userID, nil
+	return nil
 }
 
 // connection string, id *autha.Identity, token autha.Token
-func (p *provider) Connect(ctx context.Context, userID *autha.UserID, m *autha.ConnectUser) error {
-	if userID == nil {
-		return fmt.Errorf("No userid supplied")
-	}
-
+func (p *provider) Connect(ctx context.Context, aggregateID string, m *autha.ConnectUser) error {
 	raw := ConnectCommand{
 		m,
-		string(*userID),
+		aggregateID,
+	}
+	if p.debug {
+		fmt.Printf("Payload: %#v", raw)
 	}
 
+	var errorString string
 	status, err := httpbuilder.NewFaaS().
 		SetAuthBasic(p.username, p.password).
 		SetFunction(p.functionName).
 		SetMethod(http.MethodPost).
 		SetBody(&raw).
+		SetErrorString(&errorString).
 		AddQuery(queryName, "ConnectUserCommand").
 		Do(ctx)
 
 	if err != nil {
-		return fmt.Errorf("Calling user service failed %w", err)
+		return fmt.Errorf("Error with request %w %s", err, errorString)
 	}
-	if status < 200 || status > 400 {
-		return errors.New("Invalid http status")
+	if status < 200 || status > 399 {
+		return fmt.Errorf("Error with status code %d %s", status, errorString)
 	}
 
 	return nil

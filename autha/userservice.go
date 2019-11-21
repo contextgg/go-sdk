@@ -16,7 +16,7 @@ type BaseUser struct {
 type PersistUser struct {
 	*BaseUser
 
-	PrimaryUserID      *UserID `json:"primary_user_id,omitempty"`
+	PrimaryUserID      *string `json:"primary_user_id,omitempty"`
 	IsConnectedProfile bool    `json:"is_connected_profile"`
 }
 
@@ -26,7 +26,7 @@ type ConnectUser struct {
 }
 
 // NewPersistUser return a new persist user struct
-func NewPersistUser(provider, connection string, token Token, profile *Profile, primaryUserID *UserID, isConnectedProfile bool) *PersistUser {
+func NewPersistUser(provider, connection string, token Token, profile *Profile, primaryUserID *string, isConnectedProfile bool) *PersistUser {
 	return &PersistUser{
 		BaseUser: &BaseUser{
 			Provider:   provider,
@@ -53,6 +53,8 @@ func NewConnectUser(provider, connection string, token Token, profile *Profile) 
 
 // UserService is the common interface for users
 type UserService interface {
-	Persist(context.Context, *PersistUser) (*UserID, error)
-	Connect(context.Context, *UserID, *ConnectUser) error
+	SetDebug()
+	CalculateAggregateID(string, string) string
+	Persist(context.Context, string, *PersistUser) error
+	Connect(context.Context, string, *ConnectUser) error
 }

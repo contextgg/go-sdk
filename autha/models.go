@@ -9,6 +9,3 @@ type Profile struct {
 	AvatarURL   string      `json:"avatar_url,omitempty"`
 	Raw         interface{} `json:"raw,omitempty"`
 }
-
-// UserID so we can lookup the User by ID
-type UserID string

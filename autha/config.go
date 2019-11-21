@@ -21,6 +21,8 @@ type Config struct {
 	userStore    UserStore
 	authProvider AuthProvider
 	userService  UserService
+
+	debug bool
 }
 
 // NewConfig will return a new config
@@ -42,6 +44,11 @@ func NewConfig(
 		authProvider: authProvider,
 		userService:  userService,
 	}
+}
+
+// SetDebug so we can log more info
+func (c *Config) SetDebug() {
+	c.debug = true
 }
 
 func (c *Config) fullErrorURL(errorType string) string {
@@ -113,11 +120,34 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentUserID, isConnected, err := c.userStore.Load(r)
+	// calcuate the aggregate id!
+	userID := c.userService.CalculateAggregateID(c.connection, profile.ID)
+	isConnecting := false
+	var primaryUserID *string
+
+	if c.debug {
+		fmt.Printf("User ID: %s", userID)
+	}
+
+	cid, ok, err := c.userStore.Load(r)
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("identity"), http.StatusFound)
 		log.Print(fmt.Errorf("Error loading current user id: %w", err))
 		return
+	}
+
+	if c.debug {
+		fmt.Printf("Current ID: %s", cid)
+	}
+
+	if ok && cid != userID {
+		isConnecting = true
+		primaryUserID = &cid
+	}
+
+	if c.debug {
+		fmt.Printf("Is Connecting: %#v", isConnecting)
+		fmt.Printf("Primary User ID: %#v", primaryUserID)
 	}
 
 	// if we are linking we need to tell the user this is a secondary account!
@@ -126,37 +156,53 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 		c.connection,
 		token,
 		profile,
-		currentUserID,
-		isConnected,
+		primaryUserID,
+		isConnecting,
 	)
+
+	if c.debug {
+		fmt.Printf("NewPersistUser: %#v", pu)
+	}
+
 	// if we have an id store it!
-	id, err := c.userService.Persist(r.Context(), pu)
-	if err != nil {
+	if err := c.userService.Persist(r.Context(), userID, pu); err != nil {
 		http.Redirect(w, r, c.fullErrorURL("user"), http.StatusFound)
 		log.Print(fmt.Errorf("Error Login: %w", err))
 		return
 	}
 
-	if isConnected && *currentUserID != *id {
+	id := userID
+	if isConnecting && primaryUserID != nil {
+		id = *primaryUserID
+
 		cu := NewConnectUser(
 			c.authProvider.Name(),
 			c.connection,
 			token,
 			profile,
 		)
+
+		if c.debug {
+			fmt.Printf("NewConnectUser: %#v", cu)
+		}
+
 		// we need to connect the accounts.
-		if err := c.userService.Connect(r.Context(), currentUserID, cu); err != nil {
+		if err := c.userService.Connect(r.Context(), id, cu); err != nil {
 			http.Redirect(w, r, c.fullErrorURL("user"), http.StatusFound)
 			log.Print(fmt.Errorf("Error connecting profiles: %w", err))
 			return
 		}
-	} else {
-		// this is to auth the user!
-		if err := c.userStore.Save(id, w, r); err != nil {
-			http.Redirect(w, r, c.fullErrorURL("id"), http.StatusFound)
-			log.Print(fmt.Errorf("Error Profile Store Save: %w", err))
-			return
-		}
+	}
+
+	if c.debug {
+		fmt.Printf("User ID to save: %#v", id)
+	}
+
+	// this is to auth the user!
+	if err := c.userStore.Save(id, w, r); err != nil {
+		http.Redirect(w, r, c.fullErrorURL("id"), http.StatusFound)
+		log.Print(fmt.Errorf("Error Profile Store Save: %w", err))
+		return
 	}
 
 	// save the session
