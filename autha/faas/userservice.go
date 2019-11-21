@@ -3,6 +3,7 @@ package faas
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -54,7 +55,7 @@ func (p *provider) Persist(ctx context.Context, aggregateID string, m *autha.Per
 	}
 
 	if p.debug {
-		fmt.Printf("Payload: %#v", raw)
+		log.Printf("Payload: %#v", raw)
 	}
 
 	var errorString string
@@ -84,7 +85,7 @@ func (p *provider) Connect(ctx context.Context, aggregateID string, m *autha.Con
 		aggregateID,
 	}
 	if p.debug {
-		fmt.Printf("Payload: %#v", raw)
+		log.Printf("Payload: %#v", raw)
 	}
 
 	var errorString string

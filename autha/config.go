@@ -126,7 +126,7 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	var primaryUserID *string
 
 	if c.debug {
-		fmt.Printf("User ID: %s", userID)
+		log.Printf("User ID: %s", userID)
 	}
 
 	cid, ok, err := c.userStore.Load(r)
@@ -137,7 +137,7 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if c.debug {
-		fmt.Printf("Current ID: %s", cid)
+		log.Printf("Current ID: %s", cid)
 	}
 
 	if ok && cid != userID {
@@ -146,8 +146,8 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if c.debug {
-		fmt.Printf("Is Connecting: %#v", isConnecting)
-		fmt.Printf("Primary User ID: %#v", primaryUserID)
+		log.Printf("Is Connecting: %#v", isConnecting)
+		log.Printf("Primary User ID: %#v", primaryUserID)
 	}
 
 	// if we are linking we need to tell the user this is a secondary account!
@@ -161,7 +161,7 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if c.debug {
-		fmt.Printf("NewPersistUser: %#v", pu)
+		log.Printf("NewPersistUser: %#v", pu)
 	}
 
 	// if we have an id store it!
@@ -183,7 +183,7 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 		)
 
 		if c.debug {
-			fmt.Printf("NewConnectUser: %#v", cu)
+			log.Printf("NewConnectUser: %#v", cu)
 		}
 
 		// we need to connect the accounts.
@@ -195,7 +195,7 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if c.debug {
-		fmt.Printf("User ID to save: %#v", id)
+		log.Printf("User ID to save: %#v", id)
 	}
 
 	// this is to auth the user!
