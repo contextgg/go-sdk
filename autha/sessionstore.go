@@ -25,6 +25,8 @@ type Session interface {
 	Set(key, value string) error
 	// Get the value from the session
 	Get(key string) (string, error)
+	// Clear will remove all variables from the current session
+	Clear() error
 }
 
 // SessionHasValue loads value from session and compares the value

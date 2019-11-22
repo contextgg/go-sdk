@@ -51,7 +51,7 @@ func (p *provider) Name() string {
 }
 
 func (p *provider) BeginAuth(ctx context.Context, session autha.Session, params autha.Params) (string, error) {
-	playerID := params.Get("player_id")
+	playerID := params.Get("playerID")
 	if playerID == "" {
 		return "", errors.New("We require a player id")
 	}

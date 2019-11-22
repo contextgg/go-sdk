@@ -68,6 +68,13 @@ func (s *session) Get(key string) (string, error) {
 	return real, nil
 }
 
+func (s *session) Clear() error {
+	for k := range s.inner.Values {
+		delete(s.inner.Values, k)
+	}
+	return nil
+}
+
 // NewSessionStore creates a new session store
 func NewSessionStore(secure bool, keypairs ...[]byte) (autha.SessionStore, error) {
 	if len(keypairs) == 0 {

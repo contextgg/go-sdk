@@ -78,6 +78,28 @@ func (c *Config) Begin(w http.ResponseWriter, r *http.Request) Session {
 		return nil
 	}
 
+	// if there's an ID check with our current user!
+	cid, ok, err := c.userStore.Load(r)
+	if err != nil {
+		http.Redirect(w, r, c.fullErrorURL("identity"), http.StatusFound)
+		log.Print(fmt.Errorf("Error loading current user id: %w", err))
+		return nil
+	}
+
+	paramID := r.URL.Query().Get("id")
+	if len(paramID) > 0 {
+		if !ok || cid != paramID {
+			// wrong user id
+			http.Redirect(w, r, c.fullErrorURL("user"), http.StatusFound)
+			log.Print(fmt.Errorf("User IDs are wrong: want %s, got %s", paramID, cid))
+			return nil
+		}
+	}
+
+	// set the from in session. If no from supplied it'll reset the value
+	paramFrom := r.URL.Query().Get("from")
+	session.Set("from", paramFrom)
+
 	url, err := c.authProvider.BeginAuth(ctx, session, r.URL.Query())
 	if err != nil {
 		http.Redirect(w, r, c.fullErrorURL("auth"), http.StatusFound)
@@ -216,9 +238,18 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) Session {
 		return nil
 	}
 
+	// see if we have from in the session
+	from, _ := session.Get("from")
+
+	if len(from) > 0 {
+		http.Redirect(w, r, from, http.StatusFound)
+		return session
+	}
+
 	// what's the next step?
 	if len(c.loginURL) > 0 {
 		http.Redirect(w, r, c.loginURL, http.StatusFound)
+		return session
 	}
 
 	// return session!
