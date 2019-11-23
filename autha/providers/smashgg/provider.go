@@ -91,7 +91,7 @@ func (p *provider) Authorize(ctx context.Context, session autha.Session, params 
 	}
 
 	if player.Prefix != split[1] {
-		return nil, fmt.Errorf("Invalid prefix %w", err)
+		return nil, fmt.Errorf("Invalid prefix for player %d; got %s, want %s", playerID, player.Prefix, split[1])
 	}
 
 	// convert to a discord token!
