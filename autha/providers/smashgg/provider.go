@@ -99,7 +99,7 @@ func (p *provider) Authorize(ctx context.Context, session autha.Session, params 
 }
 
 func (p *provider) LoadProfile(ctx context.Context, token autha.Token, session autha.Session) (*autha.Profile, error) {
-	t, ok := token.(Token)
+	t, ok := token.(*Token)
 	if !ok {
 		return nil, errors.New("Invalid smashgg token")
 	}
