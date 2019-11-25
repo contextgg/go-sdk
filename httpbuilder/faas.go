@@ -22,6 +22,9 @@ type FaaSHTTPBuilder interface {
 	// SetAuthPrefix load up basic auth from ENV
 	SetAuthPrefix(string) FaaSHTTPBuilder
 
+	// SetBearerToken will set the Authorization header with a bearer token
+	SetBearerToken(string) FaaSHTTPBuilder
+
 	// SetAsync will enable an async function call
 	SetAsync() FaaSHTTPBuilder
 
@@ -67,6 +70,11 @@ func (b *faasHTTPBuilder) SetMethod(method string) FaaSHTTPBuilder {
 
 func (b *faasHTTPBuilder) SetAuthBasic(username, password string) FaaSHTTPBuilder {
 	b.builder.SetAuthBasic(username, password)
+	return b
+}
+
+func (b *faasHTTPBuilder) SetBearerToken(token string) FaaSHTTPBuilder {
+	b.builder.SetBearerToken(token)
 	return b
 }
 
