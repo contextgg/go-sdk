@@ -8,6 +8,7 @@ import (
 type BaseUser struct {
 	Provider   string   `json:"provider"`
 	Connection string   `json:"connection"`
+	ID         string   `json:"id"`
 	Token      Token    `json:"token"`
 	Profile    *Profile `json:"profile"`
 }
@@ -26,11 +27,12 @@ type ConnectUser struct {
 }
 
 // NewPersistUser return a new persist user struct
-func NewPersistUser(provider, connection string, token Token, profile *Profile, primaryUserID *string, isConnectedProfile bool) *PersistUser {
+func NewPersistUser(provider, connection, id string, token Token, profile *Profile, primaryUserID *string, isConnectedProfile bool) *PersistUser {
 	return &PersistUser{
 		BaseUser: &BaseUser{
 			Provider:   provider,
 			Connection: connection,
+			ID:         id,
 			Token:      token,
 			Profile:    profile,
 		},
@@ -40,11 +42,12 @@ func NewPersistUser(provider, connection string, token Token, profile *Profile, 
 }
 
 // NewConnectUser return a new persist user struct
-func NewConnectUser(provider, connection string, token Token, profile *Profile) *ConnectUser {
+func NewConnectUser(provider, connection, id string, token Token, profile *Profile) *ConnectUser {
 	return &ConnectUser{
 		BaseUser: &BaseUser{
 			Provider:   provider,
 			Connection: connection,
+			ID:         id,
 			Token:      token,
 			Profile:    profile,
 		},

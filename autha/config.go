@@ -180,6 +180,7 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) Session {
 	pu := NewPersistUser(
 		c.authProvider.Name(),
 		c.connection,
+		userID,
 		token,
 		profile,
 		primaryUserID,
@@ -204,6 +205,7 @@ func (c *Config) Callback(w http.ResponseWriter, r *http.Request) Session {
 		cu := NewConnectUser(
 			c.authProvider.Name(),
 			c.connection,
+			userID,
 			token,
 			profile,
 		)
