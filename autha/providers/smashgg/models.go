@@ -1,6 +1,9 @@
 package smashgg
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"strconv"
+)
 
 // GraphQLRequest when making a request to graphql
 type GraphQLRequest struct {
