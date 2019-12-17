@@ -1,7 +1,9 @@
 package typeregister
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"sync"
@@ -25,8 +27,9 @@ func GetTypeName(source interface{}) (reflect.Type, string) {
 
 // Register stores events so we can deserialize from datastores
 type Register interface {
-	Set(source interface{})
-	Get(name string) (interface{}, error)
+	Set(interface{})
+	Get(string) (interface{}, error)
+	Decode(string, io.Reader) (interface{}, error)
 }
 
 // NewRegister creates a new Register
@@ -68,4 +71,17 @@ func (e *register) Get(name string) (interface{}, error) {
 	}
 
 	return nil, fmt.Errorf("Cannot find %s in registry", name)
+}
+
+// Decode builds an object and fills it
+func (e *register) Decode(name string, body io.Reader) (interface{}, error) {
+	val, err := e.Get(name)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := json.NewDecoder(body).Decode(&val); err != nil {
+		return nil, err
+	}
+	return val, nil
 }
