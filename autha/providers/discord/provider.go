@@ -93,9 +93,15 @@ type Token struct {
 
 	// Webhook extra information
 	Webhook *Webhook `json:"webhook,omitempty"`
+
+	// GuildID only used when bot
+	GuildID string `json:"guild_id,omitempty"`
+
+	// Permissions only used when bot
+	Permissions string `json:"permissions,omitempty"`
 }
 
-func convertToken(tk *oauth2.Token) *Token {
+func convertToken(tk *oauth2.Token, params autha.Params) *Token {
 	if tk == nil {
 		return nil
 	}
@@ -105,6 +111,8 @@ func convertToken(tk *oauth2.Token) *Token {
 		TokenType:    tk.TokenType,
 		RefreshToken: tk.RefreshToken,
 		Expiry:       tk.Expiry,
+		GuildID:      params.Get("guild_id"),
+		Permissions:  params.Get("permissions"),
 	}
 
 	wh := tk.Extra("webhook")
@@ -119,6 +127,7 @@ func convertToken(tk *oauth2.Token) *Token {
 }
 
 type provider struct {
+	extras map[string]string
 	config *oauth2.Config
 }
 
@@ -133,8 +142,21 @@ func (p *provider) BeginAuth(ctx context.Context, session autha.Session, params 
 	// set the state
 	session.Set("state", state)
 
+	opts := []oauth2.AuthCodeOption{
+		oauth2.AccessTypeOnline,
+	}
+
+	if p.extras != nil {
+		keys := []string{"permissions"}
+		for _, key := range keys {
+			if val, ok := p.extras[key]; ok {
+				opts = append(opts, oauth2.SetAuthURLParam(key, val))
+			}
+		}
+	}
+
 	// generate the url
-	return p.config.AuthCodeURL(state, oauth2.AccessTypeOnline), nil
+	return p.config.AuthCodeURL(state, opts...), nil
 }
 
 func (p *provider) Authorize(ctx context.Context, session autha.Session, params autha.Params) (autha.Token, error) {
@@ -162,7 +184,7 @@ func (p *provider) Authorize(ctx context.Context, session autha.Session, params 
 	}
 
 	// convert to a discord token!
-	return convertToken(token), nil
+	return convertToken(token, params), nil
 }
 
 func (p *provider) LoadProfile(ctx context.Context, token autha.Token, session autha.Session) (*autha.Profile, error) {
@@ -205,8 +227,9 @@ func (p *provider) LoadProfile(ctx context.Context, token autha.Token, session a
 }
 
 // NewProvider creates a new Provider
-func NewProvider(clientID, clientSecret, callbackURL string, scopes ...string) autha.AuthProvider {
+func NewProvider(clientID, clientSecret, callbackURL string, scopes []string, extras map[string]string) autha.AuthProvider {
 	return &provider{
+		extras: extras,
 		config: newConfig(clientID, clientSecret, callbackURL, scopes),
 	}
 }
@@ -224,9 +247,7 @@ func newConfig(clientID, clientSecret, callbackURL string, scopes []string) *oau
 	}
 
 	if len(scopes) > 0 {
-		for _, scope := range scopes {
-			c.Scopes = append(c.Scopes, scope)
-		}
+		c.Scopes = scopes
 	} else {
 		c.Scopes = []string{ScopeIdentify}
 	}
