@@ -106,7 +106,7 @@ func (p *provider) LoadProfile(ctx context.Context, token autha.Token, session a
 
 	id := &autha.Profile{
 		ID:          strconv.Itoa(int(t.Player.ID)),
-		Username:    fmt.Sprintf("%s#%s", t.Player.Prefix, t.Player.GamerTag),
+		Username:    fmt.Sprintf("%s#%s", t.Player.GamerTag, t.Player.Prefix),
 		DisplayName: t.Player.GamerTag,
 		AvatarURL:   getAvatar("profile", t.Player.Images),
 		Raw:         t.Player,
