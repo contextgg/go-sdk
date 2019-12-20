@@ -1,4 +1,4 @@
-package setauth
+package basicauth
 
 import (
 	"context"
