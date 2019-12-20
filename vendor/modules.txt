@@ -1,4 +1,4 @@
-# github.com/contextgg/go-es v0.0.0-20190812105250-57a402520e0e
+# github.com/contextgg/go-es v1.1.2
 github.com/contextgg/go-es/es
 # github.com/go-playground/locales v0.12.1
 github.com/go-playground/locales
