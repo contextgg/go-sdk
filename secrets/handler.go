@@ -16,7 +16,7 @@ type contextKeyType string
 const authKey contextKeyType = "basic-auth"
 
 // AuthHandlerOptional will load up a user by a token
-func AuthHandlerOptional(hydraURL string) func(http.Handler) http.Handler {
+func AuthHandlerOptional() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
