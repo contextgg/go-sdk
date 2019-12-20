@@ -3,7 +3,7 @@ module github.com/contextgg/go-sdk
 go 1.13
 
 require (
-	github.com/contextgg/go-es v1.1.2
+	github.com/contextgg/go-es v1.1.3
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/sessions v1.2.0
