@@ -1,4 +1,4 @@
-package setauth
+package hydraauth
 
 import (
 	"github.com/contextgg/go-sdk/hydra"

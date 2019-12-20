@@ -1,4 +1,4 @@
-package setauth
+package hydraauth
 
 import (
 	"context"
