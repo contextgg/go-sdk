@@ -12,8 +12,6 @@ import (
 	"github.com/contextgg/go-sdk/httpbuilder"
 )
 
-const queryName = "type_name"
-
 // PersistCommand struct
 type PersistCommand struct {
 	*autha.PersistUser
@@ -31,8 +29,6 @@ type ConnectCommand struct {
 type provider struct {
 	functionName string
 	namespace    uuid.UUID
-	username     string
-	password     string
 
 	debug bool
 }
@@ -60,12 +56,11 @@ func (p *provider) Persist(ctx context.Context, aggregateID string, m *autha.Per
 
 	var errorString string
 	status, err := httpbuilder.NewFaaS().
-		SetAuthBasic(p.username, p.password).
 		SetFunction(p.functionName).
+		AppendPath("persistuser").
 		SetMethod(http.MethodPost).
 		SetBody(&raw).
 		SetErrorString(&errorString).
-		AddQuery(queryName, "PersistUserCommand").
 		Do(ctx)
 
 	if err != nil {
@@ -90,12 +85,11 @@ func (p *provider) Connect(ctx context.Context, aggregateID string, m *autha.Con
 
 	var errorString string
 	status, err := httpbuilder.NewFaaS().
-		SetAuthBasic(p.username, p.password).
 		SetFunction(p.functionName).
+		AppendPath("connectuser").
 		SetMethod(http.MethodPost).
 		SetBody(&raw).
 		SetErrorString(&errorString).
-		AddQuery(queryName, "ConnectUserCommand").
 		Do(ctx)
 
 	if err != nil {
@@ -109,13 +103,11 @@ func (p *provider) Connect(ctx context.Context, aggregateID string, m *autha.Con
 }
 
 // NewService creates a new user provider
-func NewService(functionName, authDNS, username, password string) autha.UserService {
+func NewService(functionName, authDNS string) autha.UserService {
 	base := uuid.NewSHA1(uuid.NameSpaceURL, []byte(authDNS))
 
 	return &provider{
 		functionName: functionName,
 		namespace:    base,
-		username:     username,
-		password:     password,
 	}
 }
