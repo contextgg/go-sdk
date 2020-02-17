@@ -57,7 +57,7 @@ func TestHasGuild(t *testing.T) {
 	}
 }
 
-func TestExtaMap(t *testing.T) {
+func TestExtaMapWebhook(t *testing.T) {
 	hook := map[string]interface{}{
 		"id":         "id",
 		"token":      "token",
@@ -98,6 +98,57 @@ func TestExtaMap(t *testing.T) {
 
 	if r.Webhook.GuildID != "guild_id" {
 		t.Error("Webhook GuildID wrong")
+		return
+	}
+}
+
+func TestExtaMapGuild(t *testing.T) {
+	guild := map[string]interface{}{
+		"id":       "id",
+		"name":     "name",
+		"icon":     "icon",
+		"owner_id": "owner_id",
+	}
+	wrap := map[string]interface{}{
+		"guild": guild,
+	}
+
+	tk := &oauth2.Token{}
+	tk = tk.WithExtra(wrap)
+
+	r := convertToken(tk, &NopParams{})
+	if r == nil {
+		t.Error("Should not be nil")
+		return
+	}
+
+	if r.Error != nil {
+		t.Error(r.Error)
+		return
+	}
+
+	if r.Guild == nil {
+		t.Error("Guild should not be nil")
+		return
+	}
+
+	if r.Guild.Name != "name" {
+		t.Error("Guild Name wrong")
+		return
+	}
+
+	if r.Guild.ID != "id" {
+		t.Error("Guild id wrong")
+		return
+	}
+
+	if r.Guild.OwnerID != "owner_id" {
+		t.Error("Guild OwnerID wrong")
+		return
+	}
+
+	if r.Guild.Icon != "icon" {
+		t.Error("Guild Icon wrong")
 		return
 	}
 }
