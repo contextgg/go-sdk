@@ -174,7 +174,7 @@ func (p *provider) LoadProfile(ctx context.Context, token autha.Token, session a
 	id := &autha.Profile{
 		ID:          user.SteamID,
 		Username:    user.PersonaName,
-		DisplayName: user.RealName,
+		DisplayName: user.PersonaName,
 		AvatarURL:   user.AvatarFull,
 		Raw:         user,
 	}
