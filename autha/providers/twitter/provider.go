@@ -112,7 +112,7 @@ func (p *provider) LoadProfile(ctx context.Context, token autha.Token, session a
 	}
 
 	imageURL := user.ProfileImageURLHTTPS
-	if len(imageURL) > 0 {
+	if len(imageURL) == 0 {
 		imageURL = user.ProfileImageURL
 	}
 
