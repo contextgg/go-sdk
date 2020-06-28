@@ -23,16 +23,17 @@ var (
 
 // CurrentUser the object representing the current discord user
 type CurrentUser struct {
-	ID              string `json:"id_str"`
-	Name            string `json:"name"`
-	ScreenName      string `json:"screen_name"`
-	Location        string `json:"location"`
-	Description     string `json:"description"`
-	Email           string `json:"email"`
-	ProfileImageURL string `json:"profile_image_url"`
-	Verified        bool   `json:"verified"`
-	Protected       bool   `json:"protected"`
-	Lang            string `json:"lang"`
+	ID                   string `json:"id_str"`
+	Name                 string `json:"name"`
+	ScreenName           string `json:"screen_name"`
+	Location             string `json:"location"`
+	Description          string `json:"description"`
+	Email                string `json:"email"`
+	ProfileImageURL      string `json:"profile_image_url"`
+	ProfileImageURLHTTPS string `json:"profile_image_url_https"`
+	Verified             bool   `json:"verified"`
+	Protected            bool   `json:"protected"`
+	Lang                 string `json:"lang"`
 }
 
 type provider struct {
@@ -110,12 +111,17 @@ func (p *provider) LoadProfile(ctx context.Context, token autha.Token, session a
 		return nil, fmt.Errorf("Invalid Status Code %d", status)
 	}
 
+	imageURL := user.ProfileImageURLHTTPS
+	if len(imageURL) > 0 {
+		imageURL = user.ProfileImageURL
+	}
+
 	id := &autha.Profile{
 		ID:          user.ID,
 		Username:    user.ScreenName,
 		Email:       user.Email,
 		DisplayName: user.Name,
-		AvatarURL:   user.ProfileImageURL,
+		AvatarURL:   imageURL,
 		Raw:         user,
 	}
 	return id, nil
